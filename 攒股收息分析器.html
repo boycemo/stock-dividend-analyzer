@@ -41,7 +41,7 @@ header .sub { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
   padding: 16px 18px;
   margin-bottom: 18px;
 }
-.panel h2 { margin: 0 0 12px; font-size: 15px; color: var(--text); font-weight: 600; }
+.panel h2 { margin: 0 0 12px; font-size: 15px; color: var(--text); font-weight: 600; display: flex; align-items: center; gap: 10px; }
 
 /* ---------- 输入区 ---------- */
 .row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
@@ -278,6 +278,47 @@ footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8
 .tbl-compare th.sticky-left,
 .tbl-compare th.sticky-right { z-index: 3; }
 
+/* ---------- 打印 / 导出 PDF（整页报告） ---------- */
+/* 报告抬头（仅在打印时显示，内容由 JS 动态生成） */
+.print-meta { display: none; }
+@media print {
+  /* 打印版反转成浅色主题，避免深色底浪费墨水且文字不可读 */
+  :root {
+    --bg: #ffffff;
+    --panel: #ffffff;
+    --panel2: #f6f8fa;
+    --border: #d8dee4;
+    --text: #1f2328;
+    --muted: #57606a;
+    --accent: #0969da;
+    --gold: #9a6700;
+    --up: #cf222e;
+    --down: #1a7f37;
+  }
+  body { background: #fff; padding: 0; }
+  /* 只保留报告本体：指标卡 + 图表 + 明细表 */
+  header .sub, #panel-input, .toast, .btn { display: none !important; }
+  .print-meta {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 0 16px;
+  }
+  .cards { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .card { break-inside: avoid; padding: 10px 12px; }
+  .panel { break-inside: avoid; margin-bottom: 14px; }
+  .charts-grid { grid-template-columns: 1fr; }
+  .chart { height: auto; }
+  /* 打印时用 beforeprint 生成的高清图替代 canvas，避免打印空白/模糊 */
+  .chart canvas { display: none !important; }
+  .chart img.print-img { display: block; width: 100%; height: auto; }
+  .tbl th, .tbl td { padding: 5px 6px; }
+  .tbl-compare th, .tbl-compare td { white-space: normal; }
+  .tbl-compare .sticky-right { display: none; } /* 去掉「操作」列 */
+  .table-scroll { overflow: visible; }
+  footer { display: none; }
+}
+
 </style>
 <script>
 
@@ -335,6 +376,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   <header>
     <h1>攒股收息分析器</h1>
     <p class="sub">分红再投入（DRIP）复利测算 · 行情与分红数据来自公开接口（需联网）</p>
+    <div class="print-meta" id="print-meta"></div>
   </header>
 
   <section class="panel" id="panel-input">
@@ -384,6 +426,8 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       </div>
     </div>
     <div class="row" style="margin-top:14px;align-items:center;gap:12px;flex-wrap:wrap;">
+      <button class="btn small" id="btn-dl-all" type="button" title="把当前已渲染的所有图表依次保存为 PNG">导出全部图表 PNG</button>
+      <button class="btn small" id="btn-print-report" type="button" title="打印 / 另存为 PDF：生成含指标卡、图表与明细的整页报告">导出报告 PDF（打印）</button>
       <button class="btn small" id="btn-diagnose" type="button">网络诊断</button>
     </div>
 
@@ -407,25 +451,25 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
 
   <!-- ===================== 图 1：股价 + 除息标记 ===================== -->
   <section class="panel">
-    <h2 id="h-price">区间股价走势与除息日标记</h2>
+    <h2 id="h-price">区间股价走势与除息日标记<button class="btn tiny" data-dl="chart-price" type="button" style="margin-left:auto;" title="将当前图表保存为 PNG 图片">存为 PNG</button></h2>
     <div class="chart" id="chart-price"></div>
   </section>
 
   <div class="charts-grid">
     <!-- ============ 图 2：按年累计分红 ============ -->
     <section class="panel">
-      <h2 id="h-div">分红金额（按年聚合）</h2>
+      <h2 id="h-div">分红金额（按年聚合）<button class="btn tiny" data-dl="chart-div" type="button" style="margin-left:auto;" title="将当前图表保存为 PNG 图片">存为 PNG</button></h2>
       <div class="chart" id="chart-div"></div>
     </section>
     <!-- ============ 图 3：历史股息率走势与分位 ============ -->
     <section class="panel">
-      <h2 id="h-yield">历史股息率（TTM）走势</h2>
+      <h2 id="h-yield">历史股息率（TTM）走势<button class="btn tiny" data-dl="chart-yield" type="button" style="margin-left:auto;" title="将当前图表保存为 PNG 图片">存为 PNG</button></h2>
       <p class="note" style="margin:0 0 8px;"><b style="color:var(--text);">分位释义：</b>「分位」= 当前 TTM 股息率在<b>全部已加载历史</b>（不止分析区间）中的排名占比——如 60%，即当前股息率高于历史约 60% 的交易日（样本数见指标卡）。分位越高 → 股息率越高 → 分红相对股价越划算，越接近「攒股买点」；分位越低 → 股息率处于历史低位 → 股价相对偏贵，谨慎追高。<b style="color:var(--text);">注意方向与「股价分位」相反。</b></p>
       <div class="chart" id="chart-yield"></div>
     </section>
     <!-- ============ 图 4：DRIP vs 持有不动 ============ -->
     <section class="panel">
-      <h2>累计收益对比：分红再投入 vs 持有不动</h2>
+      <h2>累计收益对比：分红再投入 vs 持有不动<button class="btn tiny" data-dl="chart-compare" type="button" style="margin-left:auto;" title="将当前图表保存为 PNG 图片">存为 PNG</button></h2>
       <div class="chart" id="chart-compare"></div>
     </section>
   </div>
@@ -433,7 +477,9 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   <!-- ===================== 多股对比 ===================== -->
   <section class="panel" id="compare-box" hidden>
     <h2>多股对比
-      <button class="btn small" id="btn-compare-clear" type="button" style="margin-left:12px;">清空对比</button>
+      <button class="btn tiny" data-dl="chart-cmp" type="button" style="margin-left:auto;" title="将对比柱状图保存为 PNG 图片">存为 PNG</button>
+      <button class="btn tiny" data-csv="compare" type="button" title="把对比表导出为 CSV（Excel 可直接打开）">导出 CSV</button>
+      <button class="btn small" id="btn-compare-clear" type="button">清空对比</button>
     </h2>
     <p class="note" style="margin:0 0 10px;">各股票以「加入对比」当时的分析区间为基准；初始投入金额全局共享，修改后所有对比数据自动按新金额重算。年化收益与股息率本身与金额无关，可直接横向比较。</p>
     <div class="chart" id="chart-cmp"></div>
@@ -462,7 +508,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
 
   <!-- ===================== 明细表 ===================== -->
   <section class="panel">
-    <h2>分红除息明细（点击表头排序）</h2>
+    <h2>分红除息明细（点击表头排序）<button class="btn tiny" data-csv="div" type="button" style="margin-left:auto;" title="导出当前区间分红明细为 CSV（Excel 可直接打开）">导出 CSV</button></h2>
     <div class="table-scroll">
       <table class="tbl" id="tbl-div">
         <thead>
@@ -483,7 +529,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   </section>
 
   <section class="panel">
-    <h2>送股 / 拆股明细（如有）</h2>
+    <h2>送股 / 拆股明细（如有）<button class="btn tiny" data-csv="split" type="button" style="margin-left:auto;" title="导出当前区间送转/拆股明细为 CSV（Excel 可直接打开）">导出 CSV</button></h2>
     <div class="table-scroll">
       <table class="tbl" id="tbl-split">
         <thead>
@@ -1306,7 +1352,7 @@ function analyze() {
   renderDivChart(c.yearKeys, c.yearKeys.map(function (y) { return +c.byYear[y].toFixed(2); }), c.initAmount);
   renderYieldChart(c.yieldSeries, c.ttmYield, c.yieldPct, c.yieldMedian);
   renderCompareChart(c.dripCurve, c.holdCurve, c.initAmount);
-  renderDivTable(c.divEvents);
+  renderDivTable(c.divEvents, state.stock ? state.stock.currency : '');
   renderSplitTable(c.splitEvents);
 
   /* 股价图标题带上股票名称 */
@@ -1328,7 +1374,8 @@ function analyze() {
     dripIRR: c.dripIRR, holdIRR: c.holdIRR, priceChg: c.priceChg,
     ttmYield: c.ttmYield, yieldPct: c.yieldPct,
     cash: c.cash, divCount: c.divEvents.length,
-    dripFinal: c.dripFinal, holdFinal: c.holdFinal
+    dripFinal: c.dripFinal, holdFinal: c.holdFinal,
+    divEvents: c.divEvents, splitEvents: c.splitEvents
   };
   $('btn-compare').disabled = false;
 }
@@ -1757,9 +1804,17 @@ function renderCompareBox() {
 /* ============================================================================
  * 八、明细表渲染
  * ==========================================================================*/
-function renderDivTable(events) {
+function renderDivTable(events, cur) {
   var tb = $('tbl-div-body');
   $('tbl-div-empty').hidden = events.length > 0;
+  /* 币种列头联动：港股/美股把表头里的 (元) 换成实际计价币种，与 CSV 导出口径一致 */
+  cur = cur || '元';
+  if (cur !== '元') {
+    Array.prototype.forEach.call($('tbl-div').querySelectorAll('thead th'), function (th) {
+      var n = th.firstChild;
+      if (n && n.nodeType === 3) n.nodeValue = n.nodeValue.replace(/\(元\)/g, '(' + cur + ')');
+    });
+  }
   var html = '';
   events.forEach(function (e) {
     html +=
@@ -1887,6 +1942,181 @@ $('btn-diagnose').addEventListener('click', function () {
   box.hidden = !box.hidden;
 });
 $('btn-run-diag').addEventListener('click', diagnoseNetwork);
+
+/* ============================================================================
+ * 图表导出 PNG（ECharts getDataURL，所见即所得，无需外部库）
+ * ==========================================================================*/
+var CHART_TITLES = {
+  'chart-price': '股价走势与除息',
+  'chart-div': '历年分红金额',
+  'chart-yield': '股息率TTM走势',
+  'chart-compare': 'DRIP与持有累计收益',
+  'chart-cmp': '多股对比'
+};
+
+/* 导出文件名：当前股票名 + 图表名；chart-cmp 为整组对比，直接用图表名 */
+function exportChartName(id) {
+  if (id === 'chart-cmp') return CHART_TITLES[id] + '.png';
+  var base = (state.stock && state.stock.name && state.stock.name !== '--')
+    ? state.stock.name : '攒股收息';
+  return (base + '-' + (CHART_TITLES[id] || id)).replace(/[\\/:*?"<>|]/g, '') + '.png';
+}
+
+function downloadChartPng(id) {
+  var inst = state.charts[id];
+  if (!inst) {
+    toast('图表「' + (CHART_TITLES[id] || id) + '」暂无数据，请先加载股票');
+    return;
+  }
+  var url = inst.getDataURL({ pixelRatio: 2, type: 'png' });
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = exportChartName(id);
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+/* 单张导出：标题栏「存为 PNG」按钮（事件委托） */
+document.addEventListener('click', function (e) {
+  var t = e.target;
+  var btn = t && t.closest ? t.closest('[data-dl]') : null;
+  if (btn && btn.dataset.dl) downloadChartPng(btn.dataset.dl);
+});
+
+/* 全部导出：已渲染图表依次下载，间隔 400ms 避免浏览器拦截连续下载 */
+$('btn-dl-all').addEventListener('click', function () {
+  var pend = [];
+  Object.keys(CHART_TITLES).forEach(function (id) {
+    if (state.charts[id]) pend.push(id);
+  });
+  if (!pend.length) { toast('还没有可导出的图表，请先加载股票'); return; }
+  toast('开始导出 ' + pend.length + ' 张图表…');
+  pend.forEach(function (id, i) {
+    setTimeout(function () { downloadChartPng(id); }, i * 400);
+  });
+});
+
+/* ============================================================================
+ * CSV 明细导出（纯前端 Blob 下载，含 BOM 保证 Excel 中文不乱码）
+ * ==========================================================================*/
+
+/* 文件名前缀：当前股票名（无则用通用名） */
+function stockBaseName() {
+  return (state.stock && state.stock.name && state.stock.name !== '--')
+    ? state.stock.name : '攒股收息';
+}
+/* CSV 单元格转义：含逗号/引号/换行时用双引号包裹 */
+function csvCell(v) {
+  v = String(v == null ? '' : v);
+  return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+}
+function downloadCsv(filename, headers, rows) {
+  var lines = [headers.map(csvCell).join(',')];
+  rows.forEach(function (r) { lines.push(r.map(csvCell).join(',')); });
+  var blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
+  toast('已导出：' + filename);
+}
+/* 百分比：0.0561 -> "5.61%"；不可算 -> "--" */
+function pctCell(v) { return isFinite(v) ? (v * 100).toFixed(2) + '%' : '--'; }
+/* 股数：保留 2 位小数、不带千分位，避免 Excel 误判文本 */
+function shNum(v) { return String(Math.round(v * 100) / 100); }
+
+/* 三种 CSV：div=分红除息 / split=送股拆股 / compare=多股对比 */
+function exportCsv(kind) {
+  var cur = (state.stock && state.stock.currency) || '元';
+  var lm = state.lastMetrics || {};
+  if (kind === 'div') {
+    var dv = lm.divEvents;
+    if (!dv || !dv.length) { toast('当前区间没有分红记录，无法导出'); return; }
+    downloadCsv(stockBaseName() + '-分红除息明细.csv',
+      ['除息日', '每股分红(' + cur + ')', '当日收盘价(' + cur + ')', '派息时基础股数', '派息金额(' + cur + ')', 'DRIP买入股数', 'DRIP累计股数'],
+      dv.map(function (e) {
+        return [e.ds, e.dps.toFixed(4), e.close.toFixed(2), shNum(e.baseShares),
+          e.baseCash.toFixed(2), shNum(e.bought), shNum(e.dripAfter)];
+      }));
+  } else if (kind === 'split') {
+    var sp = lm.splitEvents;
+    if (!sp || !sp.length) { toast('当前区间没有送股/拆股记录，无法导出'); return; }
+    downloadCsv(stockBaseName() + '-送股拆股明细.csv',
+      ['除权日', '方案', '送股比例', '调整前股数', '调整后股数'],
+      sp.map(function (e) { return [e.ds, e.text, e.ratio, shNum(e.before), shNum(e.after)]; }));
+  } else if (kind === 'compare') {
+    if (!state.compare.length) { toast('对比列表为空，无法导出'); return; }
+    downloadCsv('多股对比.csv',
+      ['股票', '代码', '分析区间', '再投入年化(DRIP)', '持有不动年化', '同期股价涨幅', '累计分红(元)', 'DRIP期末金额(元)', 'TTM股息率', '股息率历史分位'],
+      state.compare.map(function (c) {
+        return [c.name, c.code, c.range, pctCell(c.dripIRR), pctCell(c.holdIRR), pctCell(c.priceChg),
+          c.cash.toFixed(2), c.dripFinal.toFixed(2), pctCell(c.ttmYield),
+          isFinite(c.yieldPct) ? pctCell(c.yieldPct) : '--'];
+      }));
+  }
+}
+/* CSV 导出按钮（事件委托） */
+document.addEventListener('click', function (e) {
+  var t = e.target;
+  var btn = t && t.closest ? t.closest('[data-csv]') : null;
+  if (btn && btn.dataset.csv) exportCsv(btn.dataset.csv);
+});
+
+/* ============================================================================
+ * 打印 / 导出 PDF（整页报告）
+ * 思路：@media print 反转浅色主题并隐藏交互 UI；打印前（beforeprint）把
+ * ECharts canvas 换成 getDataURL 高清 <img>，避免部分浏览器打印 canvas 空白。
+ * ==========================================================================*/
+
+/* 报告抬头：股票名 · 代码 · 币种 · 区间 · 初始投入 · 生成时间 */
+function buildReportMeta() {
+  var m = $('print-meta');
+  if (!m) return;
+  var st = state.stock || {};
+  var lm = state.lastMetrics || {};
+  var name = (st.name && st.name !== '--') ? st.name : '攒股收息';
+  var parts = [name];
+  if (st.code) parts.push(st.code);
+  parts.push((st.currency || '元') + '计价');
+  parts.push('分析区间 ' + (lm.range || '--'));
+  var amt = isFinite(lm.amount) ? lm.amount : 10000;
+  parts.push('初始投入 ¥' + amt.toLocaleString('zh-CN'));
+  parts.push('生成时间 ' + new Date().toLocaleString('zh-CN'));
+  m.textContent = parts.join(' · ');
+}
+function beforePrint() {
+  buildReportMeta();
+  /* 为每张已渲染的图生成打印用高清图 */
+  Object.keys(state.charts).forEach(function (id) {
+    var box = $(id), inst = state.charts[id];
+    if (!box || !inst || box.querySelector('img.print-img')) return;
+    try {
+      var img = document.createElement('img');
+      img.className = 'print-img';
+      img.alt = '';
+      img.src = inst.getDataURL({ pixelRatio: 2, type: 'png' });
+      box.appendChild(img);
+    } catch (err) { /* 单图失败不影响其余内容 */ }
+  });
+}
+function afterPrint() {
+  var imgs = document.querySelectorAll('img.print-img');
+  Array.prototype.forEach.call(imgs, function (im) {
+    if (im.parentNode) im.parentNode.removeChild(im);
+  });
+}
+window.addEventListener('beforeprint', beforePrint);
+window.addEventListener('afterprint', afterPrint);
+function printReport() {
+  if (!state.rows.length) { toast('请先加载股票数据再导出报告'); return; }
+  beforePrint();
+  setTimeout(function () { window.print(); }, 80); /* 稍候让图渲染进 DOM */
+}
+$('btn-print-report').addEventListener('click', printReport);
 
 /* 窗口缩放时重排图表 */
 window.addEventListener('resize', function () {
