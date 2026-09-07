@@ -1497,12 +1497,23 @@ function computeCore(rows, start, end, initAmount) {
   for (var j = 0; j < rows.length; j++) {
     if (rows[j].t >= ttmCut && rows[j].t <= endT) ttmSum += rows[j].div;
   }
-  /* 边界优化：跳过窗口内的分红行，找到【第一个】在窗口外 30 天内的最近一次分红纳入。
+  /* 边界优化：最近一笔滑出 TTM 窗口的分红（30 天内）默认补回——覆盖年度派息股
+     "旧息刚出窗、新息尚未除息"的空窗期；但若窗口内已存在晚于它 +335 天（≈365−30，
+     即同一期次新息的最早出现日）的分红，说明该期派息已有"继任者"（典型如半年派息股：
+     旧中期息 9 月初刚出窗、新中期息 8 月末已入窗），此时必须跳过，否则同一期派息
+     会被重复计入，导致 TTM 股息率虚高（中国移动 00941 实测：6.85% 被虚报为 10.33%）。
      关键：break 必须在"找到窗口外那笔"之后，不能在"第一个 div>0 的行"上 break
      （否则会卡在窗口内的最近一笔上，永远走不到要救的那笔）。 */
   for (var j = rows.length - 1; j >= 0; j--) {
     if (rows[j].div > 0 && rows[j].t < ttmCut) {
-      if (ttmCut - rows[j].t <= 30 * DAY_MS) ttmSum += rows[j].div;
+      if (ttmCut - rows[j].t <= 30 * DAY_MS) {
+        var succCut = rows[j].t + 335 * DAY_MS;               /* 同期新息最早出现日 */
+        var replaced = false;
+        for (var k2 = j + 1; k2 < rows.length; k2++) {
+          if (rows[k2].div > 0 && rows[k2].t > succCut && rows[k2].t <= endT) { replaced = true; break; }
+        }
+        if (!replaced) ttmSum += rows[j].div;
+      }
       break;                                                  /* 找到窗口外的最近一次就退出 */
     }
   }
@@ -2652,13 +2663,25 @@ async function fetchHoldingPrice(holding, row) {
         var t = dt.getTime();
         if (t >= ttmCut && t <= now) ttmSum += (parseFloat(divs[j].dps) || 0);
       }
-      // 边界优化：见 DRIP computeCore 的对应注释
+      // 边界优化：见 DRIP computeCore 的对应注释——刚滑出窗口 30 天内的那笔分红，
+      // 仅当窗口内不存在晚于它 +335 天的"同期新息"时才补回；否则（半年派息股
+      // 旧息刚出窗、新息已入窗）会重复计算，股息率虚高
       for (var j = divs.length - 1; j >= 0; j--) {
         var dt = parseDate(divs[j].ds);
         if (!dt) continue;
         var t = dt.getTime();
-        if (t < ttmCut && ttmCut - t <= 30 * DAY_MS) {
-          ttmSum += parseFloat(divs[j].dps) || 0;
+        if ((parseFloat(divs[j].dps) || 0) > 0 && t < ttmCut) {
+          if (ttmCut - t <= 30 * DAY_MS) {
+            var succCut = t + 335 * DAY_MS;                   // 同期新息最早出现日
+            var replaced = false;
+            for (var k2 = j + 1; k2 < divs.length; k2++) {
+              var dt2 = parseDate(divs[k2].ds);
+              if (!dt2) continue;
+              var t2 = dt2.getTime();
+              if ((parseFloat(divs[k2].dps) || 0) > 0 && t2 > succCut && t2 <= now) { replaced = true; break; }
+            }
+            if (!replaced) ttmSum += parseFloat(divs[j].dps) || 0;
+          }
           break;                                             // 只看最近一次
         }
       }
