@@ -29,6 +29,50 @@ body {
 }
 .wrap { max-width: 1180px; margin: 0 auto; }
 
+/* ---------- 工作台导航 ---------- */
+.workspace-header {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  margin: -24px -16px 24px;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.workspace-nav {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.workspace-nav .logo {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 14px 0;
+  margin-right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.workspace-nav .nav-item {
+  padding: 14px 18px;
+  font-size: 14px;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.workspace-nav .nav-item:hover { color: var(--text); }
+.workspace-nav .nav-item.active { color: var(--accent); border-bottom-color: var(--accent); }
+.workspace-nav .nav-item svg { width: 16px; height: 16px; opacity: .8; }
+
+/* 模块容器 */
+.module-container { display: none; }
+.module-container.active { display: block; }
+
 /* ---------- 头部 ---------- */
 header h1 { margin: 0 0 4px; font-size: 24px; letter-spacing: 1px; }
 header .sub { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
@@ -278,6 +322,75 @@ footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8
 .tbl-compare th.sticky-left,
 .tbl-compare th.sticky-right { z-index: 3; }
 
+/* ---------- 持仓工作台样式 ---------- */
+.portfolio-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+@media (max-width: 900px) { .portfolio-summary { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .portfolio-summary { grid-template-columns: 1fr; } }
+.summary-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.summary-card .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.summary-card .value { font-size: 26px; font-weight: 700; font-family: var(--mono); }
+.summary-card .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.summary-card.highlight { border-color: var(--gold); }
+.summary-card.highlight .value { color: var(--gold); }
+
+.tbl-holdings .editable {
+  background: var(--panel2);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 4px 6px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  text-align: right;
+  width: 100%;
+  min-width: 60px;
+}
+.tbl-holdings .editable:focus { border-color: var(--accent); outline: none; }
+.tbl-holdings .editable.search-input { text-align: left; cursor: pointer; background: var(--bg); }
+.tbl-holdings .holdings-row:hover { background: rgba(88,166,255,.05); }
+
+.yield-high { color: var(--down) !important; }
+.yield-mid { color: var(--gold) !important; }
+.yield-low { color: var(--muted); }
+
+.holdings-search-drop {
+  /* 用 fixed 逃离 .table-scroll 的 overflow 裁切，定位由 JS 设置 */
+  position: fixed;
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 280px;
+  min-width: 360px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0,0,0,.55);
+}
+
+.btn-icon {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+.btn-icon.delete:hover { border-color: var(--up); color: var(--up); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin 1s linear infinite; }
+
 /* ---------- 打印 / 导出 PDF（整页报告） ---------- */
 /* 报告抬头（仅在打印时显示，内容由 JS 动态生成） */
 .print-meta { display: none; }
@@ -297,7 +410,7 @@ footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8
   }
   body { background: #fff; padding: 0; }
   /* 只保留报告本体：指标卡 + 图表 + 明细表 */
-  header .sub, #panel-input, .toast, .btn { display: none !important; }
+  .workspace-header, header .sub, #panel-input, .toast, .btn, .module-container:not(.active) { display: none !important; }
   .print-meta {
     display: block;
     font-size: 12px;
@@ -305,6 +418,7 @@ footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 8
     margin: 0 0 16px;
   }
   .cards { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .portfolio-summary { grid-template-columns: 1fr 1fr; }
   .card { break-inside: avoid; padding: 10px 12px; }
   .panel { break-inside: avoid; margin-bottom: 14px; }
   .charts-grid { grid-template-columns: 1fr; }
@@ -370,7 +484,35 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
 </script>
 </head>
 <body>
+
+<!-- ===================== 工作台导航 ===================== -->
+<header class="workspace-header">
+  <nav class="workspace-nav">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-3 3"/>
+      </svg>
+      攒股收息工作台
+    </div>
+    <div class="nav-item active" data-tab="analyzer">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+      </svg>
+      DRIP 分析器
+    </div>
+    <div class="nav-item" data-tab="portfolio">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+      </svg>
+      持仓管理
+    </div>
+  </nav>
+</header>
+
 <div class="wrap">
+
+  <!-- ===================== DRIP分析器模块 ===================== -->
+  <div class="module-container active" id="module-analyzer">
 
   <!-- ===================== 顶部：标题与数据输入 ===================== -->
   <header>
@@ -548,6 +690,103 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
   </section>
 
   <footer>攒股收息分析器 · 单文件应用（需联网获取行情）· 计算公式详见页面源码注释</footer>
+
+  </div><!-- 结束 module-analyzer -->
+
+  <!-- ===================== 持仓管理模块 ===================== -->
+  <div class="module-container" id="module-portfolio">
+    <header>
+      <h1>持仓管理</h1>
+      <p class="sub">记录持股、攒股数与成本，实时计算股息率（需联网获取最新行情）</p>
+    </header>
+
+    <!-- 持仓概览 -->
+    <div class="portfolio-summary" id="summary-cards">
+      <div class="summary-card">
+        <div class="label">总持仓市值</div>
+        <div class="value" id="s-total-value">--</div>
+        <div class="sub" id="s-total-value-sub">--</div>
+      </div>
+      <div class="summary-card highlight">
+        <div class="label">加权股息率</div>
+        <div class="value" id="s-avg-yield">--</div>
+        <div class="sub">基于当前持股成本</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">年度预期分红</div>
+        <div class="value" id="s-year-div">--</div>
+        <div class="sub" id="s-year-div-sub">--</div>
+      </div>
+      <div class="summary-card">
+        <div class="label">持仓支数</div>
+        <div class="value" id="s-stock-count">--</div>
+        <div class="sub" id="s-stock-count-sub">--</div>
+      </div>
+    </div>
+
+    <!-- 快捷操作 -->
+    <section class="panel">
+      <div class="row" style="align-items:center;gap:10px;flex-wrap:wrap;">
+        <button class="btn success" id="btn-add-holding">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          新增持仓
+        </button>
+        <button class="btn" id="btn-refresh-all">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+          刷新行情
+        </button>
+        <button class="btn" id="btn-save-portfolio">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          保存数据
+        </button>
+        <button class="btn" id="btn-load-portfolio">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          加载数据
+        </button>
+        <button class="btn" id="btn-export-holdings">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          导出CSV
+        </button>
+        <label style="display:flex;align-items:center;gap:8px;margin-left:auto;font-size:13px;color:var(--muted);">
+          <input type="checkbox" id="chk-auto-refresh" style="width:16px;height:16px;accent-color:var(--accent);" />
+          自动刷新(5分钟)
+        </label>
+      </div>
+    </section>
+
+    <!-- 持仓表格 -->
+    <section class="panel">
+      <h2>我的持仓<button class="btn small" id="btn-clear-holdings" style="margin-left:auto;color:var(--up);">清空全部</button></h2>
+      <div class="table-scroll tbl-holdings">
+        <table class="tbl" id="tbl-holdings">
+          <thead><tr>
+            <th style="min-width:200px;">股票</th>
+            <th>持股数量</th>
+            <th>成本价(元)</th>
+            <th>当前价<i class="q" title="实时行情">?</i></th>
+            <th>市值(元)</th>
+            <th>浮盈亏(元)</th>
+            <th>TTM股息率</th>
+            <th>年度分红(元)</th>
+            <th style="min-width:70px;">操作</th>
+          </tr></thead>
+          <tbody id="tbl-holdings-body"></tbody>
+        </table>
+      </div>
+      <p class="note">提示：点击「保存数据」可将持仓保存到浏览器本地存储，「加载数据」可恢复记录。</p>
+    </section>
+
+    <!-- 使用说明 -->
+    <section class="panel">
+      <h2>使用说明</h2>
+      <div style="font-size:13px;color:var(--muted);line-height:1.8;">
+        <p style="margin:0 0 10px;"><strong style="color:var(--text);">如何添加持仓：</strong>点击「新增持仓」按钮添加新行，然后在股票列输入股票代码或名称进行搜索。</p>
+        <p style="margin:0 0 10px;"><strong style="color:var(--text);">股息率计算：</strong>基于TTM（最近12个月）分红数据计算。自动获取最新行情计算当前股息率。</p>
+        <p style="margin:0 0 10px;"><strong style="color:var(--text);">数据存储：</strong>点击「保存数据」将持仓保存到浏览器本地存储，「加载数据」可恢复记录。</p>
+        <p style="margin:0;"><strong style="color:var(--text);">市场支持：</strong>支持A股、港股、美股实时行情。</p>
+      </div>
+    </section>
+  </div><!-- 结束 module-portfolio -->
 
 </div>
 
@@ -907,17 +1146,43 @@ function fetchKlinesEm(secid) {
 }
 
 /* 解析腾讯 K 线内嵌的除权除息文本 FHcontent → {dps(每股现金), split(每股送出)}
- * 实测样例：港股 "末期息3.4港元;" "第一季度息0.1美元"（部分港股以美元派息）
- *           美股 "每股分配0.25美元"；同日多笔以分号并列时金额相加。
+ * 实测样例：
+ *   - 港股 "末期息3.4港元;" / "第一季度息0.1美元"（部分港股以美元派息）
+ *   - A+H 双重上市 "末期息1.5人民币;相当于1.64678港元;" —— 文本里同时含 RMB 与 HKD 两种币种，
+ *     "相当于 X 港元" 是换算结果，按主币种只取这一个，避免把 RMB 和 HKD 重复累加
+ *   - A+H 仅有 RMB 暂未公告港元等值 "中期息0.98人民币;" —— 返回 0 跳过（不混币种计入 TTM，
+ *     等腾讯补港元等值后下次刷新自动入账），避免币种歧义
+ *   - 美股 "每股分配0.25美元"；同日多笔以分号并列时金额相加
  * 美仙/美分为最小单位需 ÷100；送红股/拆股仅常见于港股，尽力解析。 */
 function parseFHContent(text) {
   var dps = 0, split = 0, m;
   if (!text) return { dps: 0, split: 0 };
-  var re = /(\d+(?:\.\d+)?)\s*(港元|港币|美元|美仙|美分|人民币|元)/g;
-  while ((m = re.exec(text)) !== null) {
-    var v = parseFloat(m[1]);
-    if (m[2] === '美仙' || m[2] === '美分') v /= 100;
-    dps += v;
+  /* 主币种探测：依次尝试
+   *   1) "相当于 X 港元/港币"（A+H 票的港元等值，无歧义）
+   *   2) "X 港元/港币" 或 "X 美元" 或 "X 美仙/美分÷100"（主币种直给）
+   *   3) 仅 RMB → 返回 0 跳过（避免按 RMB 计入港元 TTM 这种币种混淆 bug）
+   *   4) 多个独立币种同日多笔派息 → 累加（同 case D：港元 + 美元） */
+  var hasHKDequiv = /相当于\s*\d+(?:\.\d+)?\s*(港元|港币)/.test(text);
+  var hasHKD = /(\d+(?:\.\d+)?)\s*(港元|港币)/.test(text);
+  var hasUSD = /(\d+(?:\.\d+)?)\s*美元/.test(text);
+  var hasCent = /(\d+(?:\.\d+)?)\s*(美仙|美分)/.test(text);
+  var hasRMB = /(\d+(?:\.\d+)?)\s*(人民币|元)/.test(text);
+  if (hasHKDequiv) {
+    m = /相当于\s*(\d+(?:\.\d+)?)\s*(港元|港币)/.exec(text);
+    if (m) dps = parseFloat(m[1]);
+  } else if (hasHKD || hasUSD || hasCent) {
+    /* 主币种直给，累加（同日多笔多币种派息场景保留） */
+    var re = /(\d+(?:\.\d+)?)\s*(港元|港币|美元|美仙|美分)/g;
+    while ((m = re.exec(text)) !== null) {
+      var v = parseFloat(m[1]);
+      if (m[2] === '美仙' || m[2] === '美分') v /= 100;
+      dps += v;
+    }
+  } else if (hasRMB) {
+    /* 仅 RMB 无主币种等值 → 跳过，避免按 RMB 计入港元/美元 TTM 的币种混淆 */
+    dps = 0;
+  } else {
+    dps = 0;
   }
   m = /送[\u4e00-\u9fa5]*?(\d+(?:\.\d+)?)\s*股/.exec(text);   /* 如 "送红股1股" */
   if (m) split += parseFloat(m[1]);
@@ -1231,6 +1496,15 @@ function computeCore(rows, start, end, initAmount) {
   var ttmSum = 0;
   for (var j = 0; j < rows.length; j++) {
     if (rows[j].t >= ttmCut && rows[j].t <= endT) ttmSum += rows[j].div;
+  }
+  /* 边界优化：跳过窗口内的分红行，找到【第一个】在窗口外 30 天内的最近一次分红纳入。
+     关键：break 必须在"找到窗口外那笔"之后，不能在"第一个 div>0 的行"上 break
+     （否则会卡在窗口内的最近一笔上，永远走不到要救的那笔）。 */
+  for (var j = rows.length - 1; j >= 0; j--) {
+    if (rows[j].div > 0 && rows[j].t < ttmCut) {
+      if (ttmCut - rows[j].t <= 30 * DAY_MS) ttmSum += rows[j].div;
+      break;                                                  /* 找到窗口外的最近一次就退出 */
+    }
   }
   var ttmYield = lastClose > 0 ? ttmSum / lastClose : NaN;
   /* 最新自然年度：最新数据所在年份的每股分红合计 ÷ 最新收盘价 */
@@ -2127,6 +2401,414 @@ window.addEventListener('resize', function () {
 makeSortable('tbl-div');
 makeSortable('tbl-split');
 makeSortable('tbl-compare');
+
+/* ==================== 工作台导航切换 ==================== */
+document.querySelectorAll('.nav-item').forEach(function(nav) {
+  nav.addEventListener('click', function() {
+    document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+    nav.classList.add('active');
+    var tab = nav.dataset.tab;
+    document.querySelectorAll('.module-container').forEach(function(m) { m.classList.remove('active'); });
+    document.getElementById('module-' + tab).classList.add('active');
+  });
+});
+
+/* ==================== 持仓管理模块 ==================== */
+var holdingsState = {
+  holdings: [],
+  holdingIdCounter: 1,
+  autoRefreshTimer: null
+};
+
+/* 初始化持仓 */
+function initPortfolio() {
+  loadHoldingsFromStorage();
+  setupHoldingsListeners();
+  updateHoldingsSummary();
+}
+
+/* 设置持仓事件监听 */
+function setupHoldingsListeners() {
+  $('btn-add-holding').addEventListener('click', addHoldingRow);
+  $('btn-clear-holdings').addEventListener('click', clearAllHoldings);
+  $('btn-refresh-all').addEventListener('click', refreshAllHoldingsPrices);
+  $('btn-save-portfolio').addEventListener('click', saveHoldingsToStorage);
+  $('btn-load-portfolio').addEventListener('click', loadHoldingsFromStorage);
+  $('btn-export-holdings').addEventListener('click', exportHoldingsCSV);
+
+  $('chk-auto-refresh').addEventListener('change', function(e) {
+    if (e.target.checked) {
+      holdingsState.autoRefreshTimer = setInterval(refreshAllHoldingsPrices, 5 * 60 * 1000);
+      toast('已开启自动刷新（5分钟）');
+    } else {
+      clearInterval(holdingsState.autoRefreshTimer);
+      toast('已关闭自动刷新');
+    }
+  });
+}
+
+/* 添加持仓行 */
+function addHoldingRow() {
+  var id = holdingsState.holdingIdCounter++;
+  var holding = { id: id, code: '', name: '', market: '', shares: 0, cost: 0, price: 0, yield_ttm: 0 };
+  holdingsState.holdings.push(holding);
+
+  var tbody = $('tbl-holdings-body');
+  var tr = document.createElement('tr');
+  tr.className = 'holdings-row';
+  tr.dataset.id = id;
+  tr.innerHTML = getHoldingRowHTML(holding);
+  tbody.appendChild(tr);
+
+  setupHoldingSearch(tr, holding);
+  updateHoldingsSummary();
+  return tr;
+}
+
+function getHoldingRowHTML(h) {
+  /* 加载已保存的持仓时，input 的 value 要回填 h.code + h.name（之前漏了，导致
+   * 「加载数据」后股票栏空白，只显示 placeholder）。同时做一下转义防 XSS。 */
+  var stockVal = (h.code || h.name) ? escHtml((h.code || '') + (h.name ? ' ' + h.name : '')) : '';
+  return '<td><div style="position:relative;"><input type="text" class="editable search-input" value="' + stockVal + '" placeholder="点击搜索股票..." data-field="stock"/><div class="holdings-search-drop" hidden></div></div></td>' +
+    '<td><input type="number" class="editable" value="' + h.shares + '" min="0" step="1" data-field="shares"/></td>' +
+    '<td><input type="number" class="editable" value="' + h.cost + '" min="0" step="0.01" data-field="cost"/></td>' +
+    '<td><span class="current-price" data-field="price">--</span></td>' +
+    '<td><span class="market-value" data-field="mktval">--</span></td>' +
+    '<td><span class="pnl" data-field="pnl">--</span></td>' +
+    '<td><span class="yield" data-field="yield">--</span></td>' +
+    '<td><span class="year-div" data-field="yeardiv">--</span></td>' +
+    '<td class="actions"><button class="btn-icon delete" title="删除">删除</button></td>';
+}
+
+/* 简单 HTML 转义，避免持仓数据里的特殊字符（< > & "）破坏 DOM */
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function setupHoldingSearch(row, holding) {
+  var input = row.querySelector('.search-input');
+  var drop = row.querySelector('.holdings-search-drop');
+
+  input.addEventListener('input', function() {
+    clearTimeout(searchTimer);
+    var q = input.value.trim();
+    if (q.length < 1) { drop.hidden = true; return; }
+    searchTimer = setTimeout(function() { doSearch(q); }, 300);
+  });
+
+  input.addEventListener('focus', function() {
+    if (input.value.trim().length > 0) doSearch(input.value.trim());
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!input.contains(e.target) && !drop.contains(e.target)) drop.hidden = true;
+  });
+
+  row.querySelector('.tbl-holdings') || row.addEventListener('input', function(e) {
+    if (e.target.classList.contains('editable') && e.target.dataset.field) {
+      var field = e.target.dataset.field;
+      if (field === 'shares') holding.shares = parseFloat(e.target.value) || 0;
+      if (field === 'cost') holding.cost = parseFloat(e.target.value) || 0;
+      updateHoldingRow(row, holding);
+      updateHoldingsSummary();
+    }
+  });
+
+  row.addEventListener('click', function(e) {
+    if (e.target.classList.contains('delete') || e.target.closest('.delete')) {
+      holdingsState.holdings = holdingsState.holdings.filter(function(h) { return h.id != row.dataset.id; });
+      row.remove();
+      updateHoldingsSummary();
+      toast('已删除');
+    }
+  });
+
+  /* 用 fixed 定位下拉（逃离 .table-scroll 的 overflow 裁切）
+   * 优先向上弹出，上方空间不够再退到下方 */
+  function positionDrop() {
+    if (drop.hidden) return;
+    var r = input.getBoundingClientRect();
+    var w = Math.max(360, r.width);
+    var vw = window.innerWidth;
+    var left = Math.max(4, Math.min(r.left, vw - w - 4));
+    drop.style.width = w + 'px';
+    drop.style.left = left + 'px';
+    var h = drop.offsetHeight || 240;
+    var aboveTop = r.top - h - 6;
+    drop.style.top = (aboveTop >= 8 ? aboveTop : r.bottom + 6) + 'px';
+  }
+  /* 滚动 / 缩放时让下拉跟着输入框走（只有显示中才更新，未显示时是 no-op） */
+  function onScrollOrResize() { positionDrop(); }
+  window.addEventListener('scroll', onScrollOrResize, true);
+  window.addEventListener('resize', onScrollOrResize);
+
+  function setDrop(html) {
+    drop.innerHTML = html;
+    drop.hidden = false;
+    positionDrop();
+  }
+
+  var searchTimer = null;
+  function doSearch(q) {
+    setDrop('<div class="search-empty">搜索中...</div>');
+    var cbName = 'hs_suggest_' + (++jsonpSeq) + '_' + Date.now();
+    var url = 'https://searchapi.eastmoney.com/api/suggest/get?input=' + encodeURIComponent(q) + '&type=14&token=D43BF722C8E33BDC906FB84D85E326E8&count=8';
+    jsonp(url, cbName, 10000, 'cb').then(function(data) {
+      // 解析响应，与原始代码保持一致
+      var arr = (data && data.QuotationCodeTable && data.QuotationCodeTable.Data) || [];
+      if (!arr || !arr.length) { setDrop('<div class="search-empty">未找到</div>'); return; }
+      // 过滤并映射数据
+      var items = arr.filter(function(it) {
+        var mkt = Number(it.MktNum);
+        var cls = it.Classify || '';
+        if (mkt === 0 || mkt === 1) return /^\d{6}$/.test(it.Code);
+        if (mkt === 116) return cls === 'HK' && /^\d{1,5}$/.test(it.Code);
+        if (mkt === 105 || mkt === 106 || mkt === 107) return cls === 'UsStock' && /^[A-Z][A-Z.]{0,5}$/.test(it.Code);
+        return false;
+      }).map(function(it) {
+        var mkt = Number(it.MktNum);
+        var marketStr = mkt === 1 ? '沪' : mkt === 0 ? '深' : mkt === 116 ? '港' : '美';
+        return { code: it.Code, name: it.Name, market: marketStr };
+      });
+      if (!items.length) { setDrop('<div class="search-empty">未找到</div>'); return; }
+      setDrop(items.map(function(s) {
+        return '<div class="search-item" data-code="' + s.code + '" data-name="' + s.name + '" data-market="' + s.market + '"><span class="code">' + s.code + '</span><span class="name">' + s.name + '</span><span class="mkt">' + s.market + '</span></div>';
+      }).join(''));
+      drop.querySelectorAll('.search-item').forEach(function(el) {
+        el.addEventListener('click', function() {
+          input.value = el.dataset.code + ' ' + el.dataset.name;
+          drop.hidden = true;
+          holding.code = el.dataset.code;
+          holding.name = el.dataset.name;
+          holding.market = el.dataset.market;
+          fetchHoldingPrice(holding, row);
+        });
+      });
+    }).catch(function(err) { setDrop('<div class="search-empty">搜索失败: ' + (err && err.message ? err.message : '网络异常') + '</div>'); });
+  }
+}
+
+/* 借鉴 DRIP 分析器的分红数据接口
+ *  - A 股：fetchDividendsEm（东财 RPT_SHAREBONUS_DET）
+ *  - 港/美股：直接复用 fetchKlinesTx（DRIP 里的同款，含已修复币种重复累加 bug 的 parseFHContent）
+ * 返回 [{ds, dps, split}] 升序；失败返回 [] */
+async function fetchHoldingDividends(holding) {
+  var market = holding.market;
+  try {
+    if (market === '沪' || market === '深') {
+      return await fetchDividendsEm(holding.code);
+    }
+    if (market === '港' || market === '美') {
+      var tries;
+      if (market === '港') {
+        tries = ['hk' + holding.code];
+      } else {
+        tries = ['us' + holding.code];
+        if (!/\./.test(holding.code)) { tries.push('us' + holding.code + '.OQ'); tries.push('us' + holding.code + '.N'); }
+      }
+      for (var i = 0; i < tries.length; i++) {
+        try {
+          var r = await fetchKlinesTx(tries[i]);
+          if (r && r.divs && r.divs.length) return r.divs;
+        } catch (e) { /* 失败则尝试下一个后缀 */ }
+      }
+      return [];
+    }
+  } catch (e) {
+    console.warn('获取分红数据失败:', e);
+  }
+  return [];
+}
+
+async function fetchHoldingPrice(holding, row) {
+  if (!holding.code) return;
+  var market = holding.market;
+  var secid = (market === '沪' ? 'sh' : market === '深' ? 'sz' : market === '港' ? 'hk' : 'us') + holding.code;
+  try {
+    // 获取实时价格
+    var resp = await fetch('https://qt.gtimg.cn/q=' + secid);
+    var text = await resp.text();
+    var parts = text.split('~');
+    if (parts.length > 10) {
+      holding.price = parseFloat(parts[3]) || 0;
+    }
+
+    // 复用 DRIP 分析器的分红接口（不修改 DRIP 分析器）
+    var divs = await fetchHoldingDividends(holding);
+
+    // TTM 股息率 = 最近 365 天【已发生】每股分红合计 ÷ 最新收盘价
+    // （与 DRIP 分析器「当前股息率（TTM）」卡片口径一致：窗口 = [last.t-365d, last.t]，
+    //  关键点是要卡上界——刚公告但尚未到除息日的记录不能算进 TTM；
+    //  另含 30 天 grace：避免半年度分红股"刚出窗口"漏算，与 DRIP 同步）
+    if (holding.price > 0) {
+      var now = Date.now();
+      var ttmCut = now - 365 * DAY_MS;
+      var ttmSum = 0;
+      for (var j = 0; j < divs.length; j++) {
+        var dt = parseDate(divs[j].ds);
+        if (!dt) continue;
+        var t = dt.getTime();
+        if (t >= ttmCut && t <= now) ttmSum += (parseFloat(divs[j].dps) || 0);
+      }
+      // 边界优化：见 DRIP computeCore 的对应注释
+      for (var j = divs.length - 1; j >= 0; j--) {
+        var dt = parseDate(divs[j].ds);
+        if (!dt) continue;
+        var t = dt.getTime();
+        if (t < ttmCut && ttmCut - t <= 30 * DAY_MS) {
+          ttmSum += parseFloat(divs[j].dps) || 0;
+          break;                                             // 只看最近一次
+        }
+      }
+      holding.yield_ttm = ttmSum / holding.price;
+    } else {
+      holding.yield_ttm = 0;
+    }
+
+    updateHoldingRow(row, holding);
+    updateHoldingsSummary();
+  } catch (e) { console.warn('获取行情失败:', e); }
+}
+
+function updateHoldingRow(row, h) {
+  row.querySelector('.current-price').textContent = h.price > 0 ? fmt2(h.price) : '--';
+  if (h.shares > 0 && h.price > 0) {
+    var mktval = h.shares * h.price;
+    var pnl = mktval - h.shares * h.cost;
+    var yeardiv = h.shares * h.yield_ttm * h.price;
+    row.querySelector('.market-value').textContent = fmt2(mktval);
+    var pnlEl = row.querySelector('.pnl');
+    pnlEl.textContent = (pnl >= 0 ? '+' : '') + fmt2(pnl);
+    pnlEl.className = 'pnl ' + (pnl >= 0 ? 'up' : 'down');
+    if (h.yield_ttm > 0) {
+      var yieldEl = row.querySelector('.yield');
+      yieldEl.textContent = fmtPct(h.yield_ttm);
+      yieldEl.className = 'yield ' + (h.yield_ttm >= 0.04 ? 'yield-high' : h.yield_ttm >= 0.025 ? 'yield-mid' : 'yield-low');
+      row.querySelector('.year-div').textContent = fmt2(yeardiv);
+    }
+  }
+}
+
+function updateHoldingsSummary() {
+  var totalValue = 0, totalCost = 0, totalYearDiv = 0, weightedYield = 0, validCount = 0;
+  holdingsState.holdings.forEach(function(h) {
+    if (h.shares > 0 && h.price > 0) {
+      var mktval = h.shares * h.price;
+      totalValue += mktval;
+      totalCost += h.shares * h.cost;
+      totalYearDiv += h.shares * h.yield_ttm * h.price;
+      weightedYield += h.yield_ttm * mktval;
+      validCount++;
+    }
+  });
+  var avgYield = totalValue > 0 ? weightedYield / totalValue : 0;
+  $('s-total-value').textContent = totalValue > 0 ? '¥' + fmt2(totalValue) : '--';
+  $('s-total-value-sub').textContent = totalCost > 0 ? '成本: ¥' + fmt2(totalCost) + ' | ' + (totalValue >= totalCost ? '盈利' : '亏损') + ' ¥' + fmt2(totalValue - totalCost) : '--';
+  $('s-avg-yield').textContent = avgYield > 0 ? fmtPct(avgYield) : '--';
+  $('s-avg-yield').parentElement.classList.toggle('highlight', avgYield >= 0.03);
+  $('s-year-div').textContent = totalYearDiv > 0 ? '¥' + fmt2(totalYearDiv) : '--';
+  $('s-year-div-sub').textContent = totalValue > 0 ? '月均: ¥' + fmt2(totalYearDiv / 12) : '';
+  $('s-stock-count').textContent = validCount;
+  $('s-stock-count-sub').textContent = holdingsState.holdings.length + ' 条记录';
+}
+
+async function refreshAllHoldingsPrices() {
+  var btn = $('btn-refresh-all');
+  var icon = btn.querySelector('svg');
+  icon.classList.add('spinning');
+  var rows = document.querySelectorAll('.holdings-row');
+  var promises = holdingsState.holdings.map(function(h, i) {
+    if (h.code) return fetchHoldingPrice(h, rows[i]).catch(function() {});
+  });
+  await Promise.all(promises);
+  icon.classList.remove('spinning');
+  toast('行情已刷新');
+}
+
+function clearAllHoldings() {
+  if (!confirm('确定要清空所有持仓记录吗？')) return;
+  holdingsState.holdings = [];
+  $('tbl-holdings-body').innerHTML = '';
+  updateHoldingsSummary();
+  toast('已清空');
+}
+
+function saveHoldingsToStorage() {
+  var data = { holdings: holdingsState.holdings, counter: holdingsState.holdingIdCounter, savedAt: new Date().toISOString() };
+  localStorage.setItem('stock_portfolio', JSON.stringify(data));
+  toast('已保存到浏览器本地存储');
+}
+
+function loadHoldingsFromStorage() {
+  var saved = localStorage.getItem('stock_portfolio');
+  if (!saved) { toast('没有找到已保存的数据'); return; }
+  try {
+    var data = JSON.parse(saved);
+    holdingsState.holdings = data.holdings || [];
+    holdingsState.holdingIdCounter = data.counter || 1;
+    $('tbl-holdings-body').innerHTML = '';
+    holdingsState.holdings.forEach(function(h) {
+      var tr = document.createElement('tr');
+      tr.className = 'holdings-row';
+      tr.dataset.id = h.id;
+      tr.innerHTML = getHoldingRowHTML(h);
+      $('tbl-holdings-body').appendChild(tr);
+      setupHoldingSearch(tr, h);
+      if (h.code) fetchHoldingPrice(h, tr);
+    });
+    updateHoldingsSummary();
+    toast('已加载 ' + holdingsState.holdings.length + ' 条记录');
+  } catch (e) { toast('加载失败: ' + e.message); }
+}
+
+function exportHoldingsCSV() {
+  var validHoldings = holdingsState.holdings.filter(function(h) { return h.shares > 0; });
+  if (validHoldings.length === 0) { toast('没有可导出的持仓数据'); return; }
+  var headers = ['股票代码', '股票名称', '持股数量', '成本价', '当前价', '市值', '浮盈亏', 'TTM股息率', '年度分红'];
+  var rows = validHoldings.map(function(h) {
+    var mktval = h.shares * h.price, pnl = mktval - h.shares * h.cost;
+    return [h.code, h.name, h.shares, h.cost, h.price, mktval, pnl, h.yield_ttm > 0 ? (h.yield_ttm * 100).toFixed(2) + '%' : '--', h.yield_ttm > 0 ? (h.shares * h.yield_ttm * h.price).toFixed(2) : '--'];
+  });
+  var csv = [headers].concat(rows).map(function(r) { return r.join(','); }).join('\n');
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '持仓记录_' + todayStr() + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('已导出CSV文件');
+}
+
+/* 持仓表格行事件委托 */
+$('tbl-holdings-body').addEventListener('input', function(e) {
+  if (!e.target.classList.contains('editable') || !e.target.dataset.field) return;
+  var row = e.target.closest('.holdings-row');
+  if (!row) return;
+  var holding = holdingsState.holdings.find(function(h) { return h.id == row.dataset.id; });
+  if (!holding) return;
+  var field = e.target.dataset.field;
+  if (field === 'shares') holding.shares = parseFloat(e.target.value) || 0;
+  if (field === 'cost') holding.cost = parseFloat(e.target.value) || 0;
+  updateHoldingRow(row, holding);
+  updateHoldingsSummary();
+});
+
+$('tbl-holdings-body').addEventListener('click', function(e) {
+  if (e.target.classList.contains('delete') || e.target.closest('.delete')) {
+    var row = e.target.closest('.holdings-row');
+    if (row) {
+      holdingsState.holdings = holdingsState.holdings.filter(function(h) { return h.id != row.dataset.id; });
+      row.remove();
+      updateHoldingsSummary();
+      toast('已删除');
+    }
+  }
+});
+
+/* 初始化持仓模块 */
+initPortfolio();
 
 </script>
 </body>
