@@ -1497,13 +1497,16 @@ function computeCore(rows, start, end, initAmount) {
   /* --- 步骤 5：当前股息率 ---
    * 用【全量已加载历史】计算（而非仅分析区间），保证与步骤 5b 的
    * 历史股息率序列口径一致——分析区间再短，TTM 也应覆盖完整 365 天。 */
-  /* 送转复权：历史每股分红按其后发生的送/转比例折算到当前股本口径。
-   * 不复权的话，10转10 类方案会让旧息每股口径"账面减半"、股息率突变失真 */
+  /* 送转复权：把 TTM 窗口内的每股分红折算到【当前股本】口径。
+   * 送转后股本 ×(1+每份送出数)，同样一笔现金分红摊到更多股份上，
+   * 所以复权是【除】以累计送转因子（10转10 → 旧每股 1 元折为 0.5 元），不是乘。
+   * 注意只用于 TTM：历史分位序列里分子(分红)分母(当日不复权收盘价)同比例缩放会
+   * 互相抵消，序列保持原始每股口径即可。 */
   var adjDiv = (function () {
     var out = new Array(rows.length);
     var f = 1;                               // 其后累计送转因子（当前股本 ÷ 当时股本）
     for (var i = rows.length - 1; i >= 0; i--) {
-      out[i] = rows[i].div * f;
+      out[i] = rows[i].div / f;
       f *= 1 + (rows[i].split || 0);
     }
     return out;
@@ -1566,7 +1569,9 @@ function computeCore(rows, start, end, initAmount) {
    *   每个交易日 i 的历史股息率 y_i = 窗口内分红合计 ÷ 当日收盘价
    * 序列从上市满 365 天起（之前不足一年，TTM 无意义）。
    * 当前分位 = 序列中（截至分析结束日）≤ 当前 TTM 股息率的比例。
-   * 分红用送转复权后的每股口径（adjDiv），与 TTM 卡片一致，避免送股造成序列突变。 */
+   * 序列保持【原始每股口径】：当日分红与当日不复权收盘价都是"当时股本"口径，
+   * 与送转复权后的 TTM 卡片不冲突（送转对分子分母影响相同，会互相抵消）。
+   * 送转发生在窗口内时分母用的是当前价，故仅 TTM 需要复权（见 adjDiv）。 */
   var yieldSeries = [];            // [{ds, t, y}] 历史股息率序列
   var yieldPct = NaN;              // 当前股息率的历史分位（0~1）；越高代表当前股息率相对历史越高，股价相对分红越便宜
   var yieldMedian = NaN;           // 序列中位数（展示用）
@@ -1577,10 +1582,10 @@ function computeCore(rows, start, end, initAmount) {
       var cur = All[i];
       /* 左指针左移：剔除窗口外（> 365 天前）的分红 */
       while (L < i && All[L].t < cur.t - 365 * DAY_MS) {
-        winSum -= adjDiv[L];
+        winSum -= All[L].div;
         L++;
       }
-      winSum += adjDiv[i];         // 纳入当日除息的分红（复权口径）
+      winSum += cur.div;           // 纳入当日除息的分红（原始每股口径）
       if (cur.t - All[0].t < 365 * DAY_MS) continue;  // 上市未满一年，跳过
       if (cur.close > 0 && cur.t <= endT) {
         yieldSeries.push({ ds: cur.ds, t: cur.t, y: winSum / cur.close });
@@ -2708,8 +2713,9 @@ async function fetchHoldingPrice(holding, row) {
       if (holding.price > 0) {
       var now = Date.now();
       var ttmCut = now - 365 * DAY_MS;
-      /* 预处理：解析日期 + 送转复权因子（每股分红按其后送/转比例折算到当前股本口径，
-       * 否则 10转10 类方案会让旧息"账面减半"、股息率失真） */
+      /* 预处理：解析日期 + 送转复权因子。送转后股本 ×(1+每份送出数)，同样一笔现金
+       * 摊到更多股份上，故复权是【除】以累计送转因子（10转10 → 旧每股 1 元折 0.5 元）。
+       * 只作用于 TTM：分母是复权后的当前价，历史分位序列分子分母会互相抵消，不用复权 */
       var items = [];
       for (var j = 0; j < divs.length; j++) {
         var dt = parseDate(divs[j].ds);
@@ -2720,7 +2726,7 @@ async function fetchHoldingPrice(holding, row) {
         if (items[j].dps <= 0) continue;
         var f = 1;
         for (var m = j + 1; m < items.length; m++) f *= 1 + items[m].split;
-        items[j].dpsAdj = items[j].dps * f;
+        items[j].dpsAdj = items[j].dps / f;
       }
       var ttmSum = 0;
       for (var j = 0; j < items.length; j++) {
