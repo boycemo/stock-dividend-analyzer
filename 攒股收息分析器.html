@@ -2486,7 +2486,9 @@ function getHoldingRowHTML(h) {
     '<td><span class="current-price" data-field="price">--</span></td>' +
     '<td><span class="market-value" data-field="mktval">--</span></td>' +
     '<td><span class="pnl" data-field="pnl">--</span></td>' +
-    '<td><span class="yield" data-field="yield">--</span></td>' +
+    /* TTM股息率列可编辑（百分比数值，如 6.90 表示 6.90%）；获取的数据可能有误，
+     * 用户手工修正后标记 yield_manual，自动刷新/重新获取行情时不再覆盖该值 */
+    '<td><input type="number" class="editable yield" value="' + (h.yield_ttm > 0 ? (h.yield_ttm * 100).toFixed(2) : '') + '" min="0" max="100" step="0.01" placeholder="--" data-field="yield_ttm" title="可手动修正，输入百分比数值"/></td>' +
     '<td><span class="year-div" data-field="yeardiv">--</span></td>' +
     '<td class="actions"><button class="btn-icon delete" title="删除">删除</button></td>';
 }
@@ -2522,6 +2524,11 @@ function setupHoldingSearch(row, holding) {
       var field = e.target.dataset.field;
       if (field === 'shares') holding.shares = parseFloat(e.target.value) || 0;
       if (field === 'cost') holding.cost = parseFloat(e.target.value) || 0;
+      if (field === 'yield_ttm') {
+        /* 输入的是百分比数值（如 6.90 = 6.90%），标记为手工修正，行情刷新不再覆盖 */
+        holding.yield_ttm = (parseFloat(e.target.value) || 0) / 100;
+        holding.yield_manual = true;
+      }
       updateHoldingRow(row, holding);
       updateHoldingsSummary();
     }
@@ -2594,6 +2601,8 @@ function setupHoldingSearch(row, holding) {
           holding.code = el.dataset.code;
           holding.name = el.dataset.name;
           holding.market = el.dataset.market;
+          holding.yield_ttm = 0;
+          delete holding.yield_manual;   /* 换了股票，解除手工修正标记，恢复自动获取 */
           fetchHoldingPrice(holding, row);
         });
       });
@@ -2653,7 +2662,9 @@ async function fetchHoldingPrice(holding, row) {
     // （与 DRIP 分析器「当前股息率（TTM）」卡片口径一致：窗口 = [last.t-365d, last.t]，
     //  关键点是要卡上界——刚公告但尚未到除息日的记录不能算进 TTM；
     //  另含 30 天 grace：避免半年度分红股"刚出窗口"漏算，与 DRIP 同步）
-    if (holding.price > 0) {
+    // 若用户手工修正过股息率（yield_manual），则保留手工值，不再自动覆盖
+    if (!holding.yield_manual) {
+      if (holding.price > 0) {
       var now = Date.now();
       var ttmCut = now - 365 * DAY_MS;
       var ttmSum = 0;
@@ -2689,6 +2700,7 @@ async function fetchHoldingPrice(holding, row) {
     } else {
       holding.yield_ttm = 0;
     }
+    }
 
     updateHoldingRow(row, holding);
     updateHoldingsSummary();
@@ -2700,17 +2712,23 @@ function updateHoldingRow(row, h) {
   if (h.shares > 0 && h.price > 0) {
     var mktval = h.shares * h.price;
     var pnl = mktval - h.shares * h.cost;
-    var yeardiv = h.shares * h.yield_ttm * h.price;
     row.querySelector('.market-value').textContent = fmt2(mktval);
     var pnlEl = row.querySelector('.pnl');
     pnlEl.textContent = (pnl >= 0 ? '+' : '') + fmt2(pnl);
     pnlEl.className = 'pnl ' + (pnl >= 0 ? 'up' : 'down');
-    if (h.yield_ttm > 0) {
-      var yieldEl = row.querySelector('.yield');
-      yieldEl.textContent = fmtPct(h.yield_ttm);
-      yieldEl.className = 'yield ' + (h.yield_ttm >= 0.04 ? 'yield-high' : h.yield_ttm >= 0.025 ? 'yield-mid' : 'yield-low');
-      row.querySelector('.year-div').textContent = fmt2(yeardiv);
-    }
+  }
+  /* TTM股息率（可编辑输入框，值为百分比数值）+ 年度分红联动重算。
+   * 输入框正在编辑时不要回写 value，避免打断输入 */
+  var yieldEl = row.querySelector('.yield');
+  var yeardivEl = row.querySelector('.year-div');
+  if (h.yield_ttm > 0 && h.shares > 0 && h.price > 0) {
+    if (document.activeElement !== yieldEl) yieldEl.value = (h.yield_ttm * 100).toFixed(2);
+    yieldEl.className = 'editable yield ' + (h.yield_ttm >= 0.04 ? 'yield-high' : h.yield_ttm >= 0.025 ? 'yield-mid' : 'yield-low');
+    yeardivEl.textContent = fmt2(h.shares * h.yield_ttm * h.price);
+  } else {
+    if (document.activeElement !== yieldEl) yieldEl.value = h.yield_ttm > 0 ? (h.yield_ttm * 100).toFixed(2) : '';
+    yieldEl.className = 'editable yield yield-low';
+    yeardivEl.textContent = '--';
   }
 }
 
@@ -2814,6 +2832,11 @@ $('tbl-holdings-body').addEventListener('input', function(e) {
   var field = e.target.dataset.field;
   if (field === 'shares') holding.shares = parseFloat(e.target.value) || 0;
   if (field === 'cost') holding.cost = parseFloat(e.target.value) || 0;
+  if (field === 'yield_ttm') {
+    /* 输入的是百分比数值（如 6.90 = 6.90%），标记为手工修正，行情刷新不再覆盖 */
+    holding.yield_ttm = (parseFloat(e.target.value) || 0) / 100;
+    holding.yield_manual = true;
+  }
   updateHoldingRow(row, holding);
   updateHoldingsSummary();
 });
