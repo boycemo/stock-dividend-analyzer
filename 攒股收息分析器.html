@@ -586,8 +586,8 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     <div class="card"><div class="k" id="k-total-div-title">累计分红</div><div class="v mono" id="k-total-div">--</div><div class="s" id="k-total-div-sub">--</div></div>
     <div class="card"><div class="k">再投入年化收益（DRIP）</div><div class="v mono up" id="k-drip-irr">--</div><div class="s" id="k-drip-irr-sub">--</div></div>
     <div class="card"><div class="k">持有不动年化收益</div><div class="v mono" id="k-hold-irr">--</div><div class="s" id="k-hold-irr-sub">--</div></div>
-    <div class="card"><div class="k">当前股息率（TTM）</div><div class="v mono gold" id="k-yield-ttm">--</div><div class="s" id="k-yield-ttm-sub">--</div></div>
-    <div class="card"><div class="k">股息率历史分位（TTM）<i class="q" title="释义：分位 = 当前 TTM 股息率在【全部已加载历史】中的排名占比，如 80% = 比历史约 80% 的交易日更高。&#10;分位越高 → 股息率越高 → 分红相对股价越划算，接近「攒股买点」；&#10;分位越低 → 股息率处于历史低位 → 股价相对偏贵，谨慎追高。&#10;注意：这是股息率的分位，方向与「股价分位」相反（股价分位越高越贵）。">?</i></div><div class="v mono gold" id="k-yield-pct">--</div><div class="s" id="k-yield-pct-sub">--</div></div>
+    <div class="card"><div class="k">股息率（静态口径）<i class="q" title="口径：最近一个完整会计年度【已实施】的每股分红合计 ÷ 最新收盘价，按分红方案归属年度（末期=年报、中期=中报）取数，与同花顺个股页默认口径一致。&#10;相比 TTM，它不受派息节奏漂移影响，更适合横向比较与估算年度分红能力。&#10;副标题的 TTM（滚动12个月实际到账）与自然年口径仅作参考。">?</i></div><div class="v mono gold" id="k-yield-static">--</div><div class="s" id="k-yield-static-sub">--</div></div>
+    <div class="card"><div class="k">股息率历史分位<i class="q" title="释义：分位 = 当前【静态口径】股息率在【全部已加载历史】中的排名占比，如 80% = 比历史约 80% 的交易日更高。&#10;历史序列同用静态口径（截至当日已实施的上一完整年度分红 ÷ 当日收盘价），与主卡片一致。&#10;分位越高 → 股息率越高 → 分红相对股价越划算，接近「攒股买点」；&#10;分位越低 → 股息率处于历史低位 → 股价相对偏贵，谨慎追高。&#10;注意：这是股息率的分位，方向与「股价分位」相反（股价分位越高越贵）。">?</i></div><div class="v mono gold" id="k-yield-pct">--</div><div class="s" id="k-yield-pct-sub">--</div></div>
     <div class="card"><div class="k">同期股价涨幅</div><div class="v mono" id="k-price-chg">--</div><div class="s" id="k-price-chg-sub">--</div></div>
   </div>
 
@@ -605,7 +605,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
     </section>
     <!-- ============ 图 3：历史股息率走势与分位 ============ -->
     <section class="panel">
-      <h2 id="h-yield">历史股息率（TTM）走势<button class="btn tiny" data-dl="chart-yield" type="button" style="margin-left:auto;" title="将当前图表保存为 PNG 图片">存为 PNG</button></h2>
+      <h2 id="h-yield">历史股息率（静态口径）走势<button class="btn tiny" data-dl="chart-yield" type="button" style="margin-left:auto;" title="将当前图表保存为 PNG 图片">存为 PNG</button></h2>
       <p class="note" style="margin:0 0 8px;"><b style="color:var(--text);">分位释义：</b>「分位」= 当前 TTM 股息率在<b>全部已加载历史</b>（不止分析区间）中的排名占比——如 60%，即当前股息率高于历史约 60% 的交易日（样本数见指标卡）。分位越高 → 股息率越高 → 分红相对股价越划算，越接近「攒股买点」；分位越低 → 股息率处于历史低位 → 股价相对偏贵，谨慎追高。<b style="color:var(--text);">注意方向与「股价分位」相反。</b></p>
       <div class="chart" id="chart-yield"></div>
     </section>
@@ -636,7 +636,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
             <th data-type="num">同期涨幅 ▲▼</th>
             <th data-type="num">累计分红(元) ▲▼</th>
             <th data-type="num">期末金额(元) ▲▼</th>
-            <th data-type="num">TTM股息率 ▲▼</th>
+            <th data-type="num">静态股息率 ▲▼</th>
             <th data-type="num">股息率分位<i class="q" title="股息率历史分位：越高 = 当前股息率在已加载历史中越高 = 分红相对股价越划算（攒股买点参考）；越低 = 股息率处历史低位 = 股价相对偏贵。方向与「股价分位」相反。">?</i> ▲▼</th>
             <th class="sticky-right">操作</th>
           </tr>
@@ -766,7 +766,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
             <th>当前价<i class="q" title="实时行情">?</i></th>
             <th>市值(元)</th>
             <th>浮盈亏(元)</th>
-            <th>TTM股息率</th>
+            <th>静态股息率<i class="q" title="最近完整会计年度已实施分红 ÷ 现价（与同花顺个股页口径一致），可手动修正；年度分红按此列计算。鼠标悬停可看 TTM 参考值。">?</i></th>
             <th>年度分红(元)</th>
             <th style="min-width:70px;">操作</th>
           </tr></thead>
@@ -781,7 +781,7 @@ var Fr={},Gr={};var Wr,Hr=function(){function t(t,e,n){var i=this;this._sleepAft
       <h2>使用说明</h2>
       <div style="font-size:13px;color:var(--muted);line-height:1.8;">
         <p style="margin:0 0 10px;"><strong style="color:var(--text);">如何添加持仓：</strong>点击「新增持仓」按钮添加新行，然后在股票列输入股票代码或名称进行搜索。</p>
-        <p style="margin:0 0 10px;"><strong style="color:var(--text);">股息率计算：</strong>基于TTM（最近12个月）分红数据计算。自动获取最新行情计算当前股息率。</p>
+        <p style="margin:0 0 10px;"><strong style="color:var(--text);">股息率计算：</strong>默认采用<strong style="color:var(--text);">静态口径</strong>——最近完整年度已实施分红 ÷ 现价（与同花顺个股页一致），年度分红与组合加权股息率均以此为基础；TTM（滚动12个月实际到账）作为参考值展示在悬停提示中。</p>
         <p style="margin:0 0 10px;"><strong style="color:var(--text);">数据存储：</strong>点击「保存数据」将持仓保存到浏览器本地存储，「加载数据」可恢复记录。</p>
         <p style="margin:0;"><strong style="color:var(--text);">市场支持：</strong>支持A股、港股、美股实时行情。</p>
       </div>
@@ -1563,39 +1563,49 @@ function computeCore(rows, start, end, initAmount) {
     }
   })();
 
-  /* --- 步骤 5b：历史股息率序列与当前分位 ---
-   * 遍历【全部已加载历史】（不止分析区间，样本越多分位越可靠），
-   * 滑动窗口维护「最近 365 天每股分红合计」：
-   *   每个交易日 i 的历史股息率 y_i = 窗口内分红合计 ÷ 当日收盘价
-   * 序列从上市满 365 天起（之前不足一年，TTM 无意义）。
-   * 当前分位 = 序列中（截至分析结束日）≤ 当前 TTM 股息率的比例。
-   * 序列保持【原始每股口径】：当日分红与当日不复权收盘价都是"当时股本"口径，
-   * 与送转复权后的 TTM 卡片不冲突（送转对分子分母影响相同，会互相抵消）。
-   * 送转发生在窗口内时分母用的是当前价，故仅 TTM 需要复权（见 adjDiv）。 */
-  var yieldSeries = [];            // [{ds, t, y}] 历史股息率序列
-  var yieldPct = NaN;              // 当前股息率的历史分位（0~1）；越高代表当前股息率相对历史越高，股价相对分红越便宜
+  /* --- 步骤 5b：历史股息率序列与当前分位（静态口径）---
+   * 主口径是静态股息率，所以历史序列也必须是同一口径，否则"静态值 vs TTM 序列"
+   * 会自相矛盾（分位失真）。定义：
+   *   每个交易日 i 的历史股息率 y_i = 【归属上一个完整年度的分红全额】÷ 当日收盘价
+   * 用"年度全额"而非"截至当日已实施"：后者会让每年上半年只计入中期息、末期息
+   * 除息后才补齐，序列呈锯齿且系统性偏低，分位被虚高（平安实测分位 93.9% 失真）。
+   * 年度全额与卡片静态值语义一致，也贴近同花顺按年度方案取数的做法。
+   * 序列从"存在上一个完整年度分红数据"起算（之前无参照，跳过）。
+   * 当前分位 = 序列中（截至分析结束日）≤ 当前静态股息率的比例。
+   * 口径说明：序列用【原始每股分红】配【当日不复权收盘价】（同属当时股本口径）；
+   * 仅 TTM/静态的分子因分母是当前价而需要送转复权（见 adjDiv）。 */
+  var yieldSeries = [];            // [{ds, t, y}] 历史股息率序列（静态口径）
+  var yieldPct = NaN;              // 当前静态股息率的历史分位（0~1）
   var yieldMedian = NaN;           // 序列中位数（展示用）
   (function () {
     var All = rows;               // 全量历史（含分析区间之前）
-    var winSum = 0, L = 0;
-    for (var i = 0; i < All.length; i++) {
-      var cur = All[i];
-      /* 左指针左移：剔除窗口外（> 365 天前）的分红 */
-      while (L < i && All[L].t < cur.t - 365 * DAY_MS) {
-        winSum -= All[L].div;
-        L++;
-      }
-      winSum += cur.div;           // 纳入当日除息的分红（原始每股口径）
-      if (cur.t - All[0].t < 365 * DAY_MS) continue;  // 上市未满一年，跳过
-      if (cur.close > 0 && cur.t <= endT) {
-        yieldSeries.push({ ds: cur.ds, t: cur.t, y: winSum / cur.close });
+    var fyTotal = {};             // 归属年度 → 该年度每股分红全额（原始口径）
+    for (var m1 = 0; m1 < All.length; m1++) {
+      if (All[m1].div > 0) {
+        var fyK = All[m1].fy || All[m1].ds.slice(0, 4);
+        fyTotal[fyK] = (fyTotal[fyK] || 0) + All[m1].div;
       }
     }
-    if (!isFinite(ttmYield) || !yieldSeries.length) return;
+    /* 序列起点：首个有分红的归属年度之后一年（否则"上一完整年度"无参照） */
+    var minFy = NaN;
+    for (var m0 = 0; m0 < All.length; m0++) {
+      if (All[m0].div > 0) { minFy = parseInt(All[m0].fy || All[m0].ds.slice(0, 4), 10); break; }
+    }
+    for (var i = 0; i < All.length; i++) {
+      var cur = All[i];
+      var curY = parseInt(cur.ds.slice(0, 4), 10);
+      var targetY = curY - 1;
+      if (!isFinite(minFy) || targetY < minFy) continue;   // 上一完整年度尚无参照
+      var s = fyTotal[String(targetY)] || 0;
+      if (cur.close > 0 && cur.t <= endT) {
+        yieldSeries.push({ ds: cur.ds, t: cur.t, y: s / cur.close });
+      }
+    }
+    if (!isFinite(staticYield) || !yieldSeries.length) return;
     /* 分位数：≤ 当前值的样本占比（含相等，处理连续值时误差可忽略） */
     var below = 0;
     for (var j = 0; j < yieldSeries.length; j++) {
-      if (yieldSeries[j].y <= ttmYield) below++;
+      if (yieldSeries[j].y <= staticYield) below++;
     }
     yieldPct = below / yieldSeries.length;
     /* 中位数 */
@@ -1639,7 +1649,7 @@ function computeSnapshot(rows, startDs, endDs, initAmount) {
     startDs: core.first.ds, endDs: core.last.ds, rows: rows,
     amount: initAmount,
     dripIRR: core.dripIRR, holdIRR: core.holdIRR, priceChg: core.priceChg,
-    ttmYield: core.ttmYield, yieldPct: core.yieldPct,
+    ttmYield: core.ttmYield, staticYield: core.staticYield, staticFy: core.staticFy, yieldPct: core.yieldPct,
     cash: core.cash, divCount: core.divEvents.length,
     dripFinal: core.dripFinal, holdFinal: core.holdFinal
   };
@@ -1676,7 +1686,7 @@ function analyze() {
   });
   renderPriceChart(c.priceCurve, c.divMarks, c.splitEvents);
   renderDivChart(c.yearKeys, c.yearKeys.map(function (y) { return +c.byYear[y].toFixed(2); }), c.initAmount);
-  renderYieldChart(c.yieldSeries, c.ttmYield, c.yieldPct, c.yieldMedian);
+  renderYieldChart(c.yieldSeries, c.staticYield, c.yieldPct, c.yieldMedian);
   renderCompareChart(c.dripCurve, c.holdCurve, c.initAmount);
   renderDivTable(c.divEvents, state.stock ? state.stock.currency : '');
   renderSplitTable(c.splitEvents);
@@ -1686,7 +1696,7 @@ function analyze() {
     (state.stock ? state.stock.name + ' · ' : '') + '股价走势与除息日标记';
   /* 股息率图标题 */
   $('h-yield').textContent =
-    (state.stock ? state.stock.name + ' · ' : '') + '历史股息率（TTM）走势';
+    (state.stock ? state.stock.name + ' · ' : '') + '历史股息率（静态口径）走势';
 
   /* --- 指标快照：供「加入对比」使用（记录当前区间与金额口径，
    *     并保留原始行情引用，供修改初始金额时全量重算） --- */
@@ -1698,7 +1708,7 @@ function analyze() {
     rows: state.rows,
     amount: c.initAmount,
     dripIRR: c.dripIRR, holdIRR: c.holdIRR, priceChg: c.priceChg,
-    ttmYield: c.ttmYield, yieldPct: c.yieldPct,
+    ttmYield: c.ttmYield, staticYield: c.staticYield, staticFy: c.staticFy, yieldPct: c.yieldPct,
     cash: c.cash, divCount: c.divEvents.length,
     dripFinal: c.dripFinal, holdFinal: c.holdFinal,
     divEvents: c.divEvents, splitEvents: c.splitEvents
@@ -1722,13 +1732,13 @@ function renderCards(d) {
   $('k-hold-irr').className = 'v mono ' + (d.holdIRR >= 0 ? 'up' : 'down');
   $('k-hold-irr-sub').textContent = '期末 ¥' + fmt2(d.holdFinal) + '（含落袋现金 ¥' + fmt2(d.cash) + '）';
 
-  $('k-yield-ttm').textContent = fmtPct(d.ttmYield);
-  /* 副标题参照同花顺口径并列静态股息率（最近完整年度已实施分红/现价）：
-   * TTM 因"一年两派 + 除息日漂移"可能圈进 3 笔分红而虚高（如中国平安 6.90% vs 静态 5.06%），
-   * 静态口径更贴近"年度分红能力"；自然年口径（当年内已除息）一并展示供交叉核对 */
-  $('k-yield-ttm-sub').textContent =
-    '静态口径 FY' + (d.staticFy || '--') + ' ' + (isFinite(d.staticYield) ? fmtPct(d.staticYield) : '--') +
-    ' · 自然年 ' + fmtPct(d.annualYield);
+  /* 主口径 = 静态股息率（最近完整年度已实施分红/现价，同花顺默认口径）；
+   * TTM（滚动12个月实际到账）与自然年口径降级为副标题参考值。
+   * TTM 可能因"一年两派 + 除息日漂移"圈进 3 笔而虚高（中国平安 6.90% vs 静态 5.06%） */
+  $('k-yield-static').textContent = isFinite(d.staticYield) ? fmtPct(d.staticYield) : '--';
+  $('k-yield-static-sub').textContent =
+    (d.staticFy ? 'FY' + d.staticFy + ' 口径 · ' : '') +
+    'TTM ' + fmtPct(d.ttmYield) + ' · 自然年 ' + fmtPct(d.annualYield);
 
   /* 股息率历史分位卡片：分位高 = 当前股息率相对历史越高（股价相对分红越便宜，攒股买点参考） */
   var yp = $('k-yield-pct');
@@ -1869,7 +1879,7 @@ function renderDivChart(years, values, initAmount) {
   }, true);
 }
 
-/* ---------- 图 3：历史股息率（TTM）走势 + 当前值/中位数参考线 ---------- */
+/* ---------- 图 3：历史股息率（静态口径）走势 + 当前值/中位数参考线 ---------- */
 function renderYieldChart(series, curYield, pct, median) {
   /* 参考线：当前值（红虚线，带分位）+ 历史中位数（灰点线） */
   var mkData = [];
@@ -1908,7 +1918,7 @@ function renderYieldChart(series, curYield, pct, median) {
     yAxis: {
       type: 'value',
       scale: true,
-      name: 'TTM 股息率',
+      name: '静态股息率',
       nameTextStyle: { color: AX_COLOR },
       axisLabel: {
         color: AX_COLOR,
@@ -2077,7 +2087,7 @@ function renderCompareBox() {
     legend: {
       top: 6,
       textStyle: { color: '#e6edf3' },
-      data: ['再投入年化', '持有年化', 'TTM股息率']
+      data: ['再投入年化', '持有年化', '静态股息率']
     },
     xAxis: {
       type: 'category',
@@ -2099,7 +2109,7 @@ function renderCompareBox() {
       name: '持有年化', type: 'bar', data: col('holdIRR'),
       itemStyle: { color: '#56d364', borderRadius: [3, 3, 0, 0] }
     }, {
-      name: 'TTM股息率', type: 'bar', data: col('ttmYield'),
+      name: '静态股息率', type: 'bar', data: col('staticYield'),
       itemStyle: { color: '#e3b341', borderRadius: [3, 3, 0, 0] }
     }]
   }, true);
@@ -2117,7 +2127,7 @@ function renderCompareBox() {
       '<td data-v="' + c.priceChg + '" class="' + (c.priceChg >= 0 ? 'up' : 'down') + '">' + fmtPct(c.priceChg) + '</td>' +
       '<td data-v="' + c.cash + '">' + fmt2(c.cash) + '</td>' +
       '<td data-v="' + c.dripFinal + '" title="持有不动期末：' + fmt2(c.holdFinal) + ' 元">' + fmt2(c.dripFinal) + '</td>' +
-      '<td data-v="' + c.ttmYield + '">' + fmtPct(c.ttmYield) + '</td>' +
+      '<td data-v="' + c.staticYield + '" title="TTM ' + fmtPct(c.ttmYield) + '">' + fmtPct(c.staticYield) + '</td>' +
       '<td data-v="' + c.yieldPct + '">' + (isFinite(c.yieldPct) ? fmtPct(c.yieldPct) : '--') + '</td>' +
       '<td class="sticky-right"><button class="btn-x" data-code="' + c.code + '" type="button">移除</button></td>' +
       '</tr>';
@@ -2382,10 +2392,10 @@ function exportCsv(kind) {
   } else if (kind === 'compare') {
     if (!state.compare.length) { toast('对比列表为空，无法导出'); return; }
     downloadCsv('多股对比.csv',
-      ['股票', '代码', '分析区间', '再投入年化(DRIP)', '持有不动年化', '同期股价涨幅', '累计分红(元)', 'DRIP期末金额(元)', 'TTM股息率', '股息率历史分位'],
+      ['股票', '代码', '分析区间', '再投入年化(DRIP)', '持有不动年化', '同期股价涨幅', '累计分红(元)', 'DRIP期末金额(元)', '静态股息率', 'TTM股息率', '股息率历史分位'],
       state.compare.map(function (c) {
         return [c.name, c.code, c.range, pctCell(c.dripIRR), pctCell(c.holdIRR), pctCell(c.priceChg),
-          c.cash.toFixed(2), c.dripFinal.toFixed(2), pctCell(c.ttmYield),
+          c.cash.toFixed(2), c.dripFinal.toFixed(2), pctCell(c.staticYield), pctCell(c.ttmYield),
           isFinite(c.yieldPct) ? pctCell(c.yieldPct) : '--'];
       }));
   }
@@ -2507,7 +2517,7 @@ function setupHoldingsListeners() {
 /* 添加持仓行 */
 function addHoldingRow() {
   var id = holdingsState.holdingIdCounter++;
-  var holding = { id: id, code: '', name: '', market: '', shares: 0, cost: 0, price: 0, yield_ttm: 0 };
+  var holding = { id: id, code: '', name: '', market: '', shares: 0, cost: 0, price: 0, yield_ttm: 0, yield_static: 0 };
   holdingsState.holdings.push(holding);
 
   var tbody = $('tbl-holdings-body');
@@ -2532,9 +2542,10 @@ function getHoldingRowHTML(h) {
     '<td><span class="current-price" data-field="price">--</span></td>' +
     '<td><span class="market-value" data-field="mktval">--</span></td>' +
     '<td><span class="pnl" data-field="pnl">--</span></td>' +
-    /* TTM股息率列可编辑（百分比数值，如 6.90 表示 6.90%）；获取的数据可能有误，
-     * 用户手工修正后标记 yield_manual，自动刷新/重新获取行情时不再覆盖该值 */
-    '<td><input type="number" class="editable yield" value="' + (h.yield_ttm > 0 ? (h.yield_ttm * 100).toFixed(2) : '') + '" min="0" max="100" step="0.01" placeholder="--" data-field="yield_ttm" title="可手动修正，输入百分比数值"/></td>' +
+    /* 静态股息率列可编辑（百分比数值，如 5.06 表示 5.06%）：主口径与同花顺一致
+     * （最近完整年度已实施分红/现价）。获取的数据可能有误，用户手工修正后标记
+     * yield_manual，自动刷新/重新获取行情时不再覆盖该值 */
+    '<td><input type="number" class="editable yield" value="' + (h.yield_static > 0 ? (h.yield_static * 100).toFixed(2) : '') + '" min="0" max="100" step="0.01" placeholder="--" data-field="yield_static" title="静态口径股息率，可手动修正（输入百分比数值）"/></td>' +
     '<td><span class="year-div" data-field="yeardiv">--</span></td>' +
     '<td class="actions"><button class="btn-icon delete" title="删除">删除</button></td>';
 }
@@ -2570,9 +2581,9 @@ function setupHoldingSearch(row, holding) {
       var field = e.target.dataset.field;
       if (field === 'shares') holding.shares = parseFloat(e.target.value) || 0;
       if (field === 'cost') holding.cost = parseFloat(e.target.value) || 0;
-      if (field === 'yield_ttm') {
-        /* 输入的是百分比数值（如 6.90 = 6.90%），标记为手工修正，行情刷新不再覆盖 */
-        holding.yield_ttm = (parseFloat(e.target.value) || 0) / 100;
+      if (field === 'yield_static') {
+        /* 输入的是百分比数值（如 5.06 = 5.06%），标记为手工修正，行情刷新不再覆盖 */
+        holding.yield_static = (parseFloat(e.target.value) || 0) / 100;
         holding.yield_manual = true;
       }
       updateHoldingRow(row, holding);
@@ -2648,6 +2659,7 @@ function setupHoldingSearch(row, holding) {
           holding.name = el.dataset.name;
           holding.market = el.dataset.market;
           holding.yield_ttm = 0;
+          holding.yield_static = 0;
           delete holding.yield_manual;   /* 换了股票，解除手工修正标记，恢复自动获取 */
           fetchHoldingPrice(holding, row);
         });
@@ -2719,7 +2731,11 @@ async function fetchHoldingPrice(holding, row) {
       var items = [];
       for (var j = 0; j < divs.length; j++) {
         var dt = parseDate(divs[j].ds);
-        if (dt) items.push({ t: dt.getTime(), dps: parseFloat(divs[j].dps) || 0, split: parseFloat(divs[j].split) || 0 });
+        /* fy = 分红归属年度：A股来自东财 REPORT_DATE，港美股无该字段则退化为除息日所在年 */
+        if (dt) items.push({
+          t: dt.getTime(), ds: divs[j].ds, fy: divs[j].fy || divs[j].ds.slice(0, 4),
+          dps: parseFloat(divs[j].dps) || 0, split: parseFloat(divs[j].split) || 0
+        });
       }
       items.sort(function (a, b) { return a.t - b.t; });
       for (var j = 0; j < items.length; j++) {
@@ -2753,6 +2769,22 @@ async function fetchHoldingPrice(holding, row) {
     } else {
       holding.yield_ttm = 0;
     }
+      /* 静态股息率（主口径，与同花顺一致）：最近一个完整年度【已实施】的分红
+       * 归属该年度的合计 ÷ 现价。按 fy 归属，不受派息节奏漂移影响。
+       * 若上一年无已实施分红（如年初末期息尚未除息），向前回溯最多 3 年 */
+      var staticFy = '', staticSum = 0;
+      if (holding.price > 0) {
+        var curYn = new Date().getFullYear();
+        for (var y = curYn - 1; y >= curYn - 3; y--) {
+          var ss = 0, any = false;
+          for (var q = 0; q < items.length; q++) {
+            if (items[q].dps > 0 && items[q].fy === String(y)) { ss += (items[q].dpsAdj || items[q].dps); any = true; }
+          }
+          if (any) { staticSum = ss; staticFy = String(y); break; }
+        }
+      }
+      holding.yield_static = holding.price > 0 ? staticSum / holding.price : 0;
+      holding.yield_static_fy = staticFy;
     }
 
     updateHoldingRow(row, holding);
@@ -2770,19 +2802,22 @@ function updateHoldingRow(row, h) {
     pnlEl.textContent = (pnl >= 0 ? '+' : '') + fmt2(pnl);
     pnlEl.className = 'pnl ' + (pnl >= 0 ? 'up' : 'down');
   }
-  /* TTM股息率（可编辑输入框，值为百分比数值）+ 年度分红联动重算。
-   * 输入框正在编辑时不要回写 value，避免打断输入 */
+  /* 静态股息率（可编辑输入框，值为百分比数值）+ 年度分红联动重算。
+   * 输入框正在编辑时不要回写 value，避免打断输入。
+   * 年度分红 = 持股数量 × 静态股息率 × 现价（年度分红能力，与 TTM 波动无关） */
   var yieldEl = row.querySelector('.yield');
   var yeardivEl = row.querySelector('.year-div');
-  if (h.yield_ttm > 0 && h.shares > 0 && h.price > 0) {
-    if (document.activeElement !== yieldEl) yieldEl.value = (h.yield_ttm * 100).toFixed(2);
-    yieldEl.className = 'editable yield ' + (h.yield_ttm >= 0.04 ? 'yield-high' : h.yield_ttm >= 0.025 ? 'yield-mid' : 'yield-low');
-    yeardivEl.textContent = fmt2(h.shares * h.yield_ttm * h.price);
+  var ys = h.yield_static || 0;
+  if (ys > 0 && h.shares > 0 && h.price > 0) {
+    if (document.activeElement !== yieldEl) yieldEl.value = (ys * 100).toFixed(2);
+    yieldEl.className = 'editable yield ' + (ys >= 0.04 ? 'yield-high' : ys >= 0.025 ? 'yield-mid' : 'yield-low');
+    yeardivEl.textContent = fmt2(h.shares * ys * h.price);
   } else {
-    if (document.activeElement !== yieldEl) yieldEl.value = h.yield_ttm > 0 ? (h.yield_ttm * 100).toFixed(2) : '';
+    if (document.activeElement !== yieldEl) yieldEl.value = ys > 0 ? (ys * 100).toFixed(2) : '';
     yieldEl.className = 'editable yield yield-low';
     yeardivEl.textContent = '--';
   }
+  yieldEl.title = '静态口径股息率' + (h.yield_ttm > 0 ? '（TTM ' + fmtPct(h.yield_ttm) + ' 仅供参考）' : '') + ' · 可手动修正';
 }
 
 function updateHoldingsSummary() {
@@ -2790,10 +2825,11 @@ function updateHoldingsSummary() {
   holdingsState.holdings.forEach(function(h) {
     if (h.shares > 0 && h.price > 0) {
       var mktval = h.shares * h.price;
+      var ys = h.yield_static || 0;
       totalValue += mktval;
       totalCost += h.shares * h.cost;
-      totalYearDiv += h.shares * h.yield_ttm * h.price;
-      weightedYield += h.yield_ttm * mktval;
+      totalYearDiv += h.shares * ys * h.price;
+      weightedYield += ys * mktval;
       validCount++;
     }
   });
@@ -2841,6 +2877,10 @@ function loadHoldingsFromStorage() {
   try {
     var data = JSON.parse(saved);
     holdingsState.holdings = data.holdings || [];
+    /* 旧存档兼容：早期只存了 yield_ttm，主口径改为静态股息率后补一个默认值 */
+    holdingsState.holdings.forEach(function (h) {
+      if (!isFinite(h.yield_static) || h.yield_static === undefined) h.yield_static = h.yield_ttm || 0;
+    });
     holdingsState.holdingIdCounter = data.counter || 1;
     $('tbl-holdings-body').innerHTML = '';
     holdingsState.holdings.forEach(function(h) {
@@ -2860,10 +2900,14 @@ function loadHoldingsFromStorage() {
 function exportHoldingsCSV() {
   var validHoldings = holdingsState.holdings.filter(function(h) { return h.shares > 0; });
   if (validHoldings.length === 0) { toast('没有可导出的持仓数据'); return; }
-  var headers = ['股票代码', '股票名称', '持股数量', '成本价', '当前价', '市值', '浮盈亏', 'TTM股息率', '年度分红'];
+  var headers = ['股票代码', '股票名称', '持股数量', '成本价', '当前价', '市值', '浮盈亏', '静态股息率', 'TTM股息率', '年度分红'];
   var rows = validHoldings.map(function(h) {
     var mktval = h.shares * h.price, pnl = mktval - h.shares * h.cost;
-    return [h.code, h.name, h.shares, h.cost, h.price, mktval, pnl, h.yield_ttm > 0 ? (h.yield_ttm * 100).toFixed(2) + '%' : '--', h.yield_ttm > 0 ? (h.shares * h.yield_ttm * h.price).toFixed(2) : '--'];
+    var ys = h.yield_static || 0;
+    return [h.code, h.name, h.shares, h.cost, h.price, mktval, pnl,
+      ys > 0 ? (ys * 100).toFixed(2) + '%' : '--',
+      h.yield_ttm > 0 ? (h.yield_ttm * 100).toFixed(2) + '%' : '--',
+      ys > 0 ? (h.shares * ys * h.price).toFixed(2) : '--'];
   });
   var csv = [headers].concat(rows).map(function(r) { return r.join(','); }).join('\n');
   var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
@@ -2885,9 +2929,9 @@ $('tbl-holdings-body').addEventListener('input', function(e) {
   var field = e.target.dataset.field;
   if (field === 'shares') holding.shares = parseFloat(e.target.value) || 0;
   if (field === 'cost') holding.cost = parseFloat(e.target.value) || 0;
-  if (field === 'yield_ttm') {
-    /* 输入的是百分比数值（如 6.90 = 6.90%），标记为手工修正，行情刷新不再覆盖 */
-    holding.yield_ttm = (parseFloat(e.target.value) || 0) / 100;
+  if (field === 'yield_static') {
+    /* 输入的是百分比数值（如 5.06 = 5.06%），标记为手工修正，行情刷新不再覆盖 */
+    holding.yield_static = (parseFloat(e.target.value) || 0) / 100;
     holding.yield_manual = true;
   }
   updateHoldingRow(row, holding);
