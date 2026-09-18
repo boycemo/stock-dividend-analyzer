@@ -1279,7 +1279,12 @@ function fetchDividendsEm(code) {
 
       var dps = (dps10 || 0) / 10;           /* 换算成每股 */
       var split = (split10 || 0) / 10;       /* 换算成每股送出数 */
-      if (dps > 0 || split > 0) out.push({ ds: ds, dps: dps, split: split });
+      if (dps > 0 || split > 0) {
+        /* 分红归属年度（报告期年份）：末期方案 REPORT_DATE = YYYY-12-31、中期 = YYYY-06-30。
+         * 静态股息率按此归属（与同花顺 F10 静态口径一致），而非除息日所在自然年 */
+        var fy = rec.REPORT_DATE ? String(rec.REPORT_DATE).slice(0, 4) : '';
+        out.push({ ds: ds, dps: dps, split: split, fy: fy });
+      }
     });
     out.sort(function (a, b) { return a.ds < b.ds ? -1 : 1; });
     return out;
@@ -1289,7 +1294,7 @@ function fetchDividendsEm(code) {
 /* 合并 K 线与分红：把每条分红挂到 >= 其除息日的第一个交易日
  * （除息日恰为非交易日时顺延到下一个交易日） */
 function mergeRows(klines, divs) {
-  var rows = [], di = 0;
+  var rows = [], di = 0, fy = '';
   var firstDs = klines[0].ds;
   for (var i = 0; i < klines.length; i++) {
     var k = klines[i];
@@ -1298,11 +1303,12 @@ function mergeRows(klines, divs) {
       if (divs[di].ds >= firstDs) {          /* 上市前的分红记录丢弃（理论不存在） */
         div += divs[di].dps;
         split += divs[di].split;
+        if (divs[di].fy) fy = divs[di].fy;   /* 分红归属年度（同日多笔取最后一笔非空值） */
       }
       di++;
     }
     var d = parseDate(k.ds);
-    rows.push({ t: d.getTime(), ds: k.ds, close: k.close, div: div, split: split });
+    rows.push({ t: d.getTime(), ds: k.ds, close: k.close, div: div, split: split, fy: fy });
   }
   return rows;
 }
@@ -1491,11 +1497,22 @@ function computeCore(rows, start, end, initAmount) {
   /* --- 步骤 5：当前股息率 ---
    * 用【全量已加载历史】计算（而非仅分析区间），保证与步骤 5b 的
    * 历史股息率序列口径一致——分析区间再短，TTM 也应覆盖完整 365 天。 */
-  /* TTM：最近 365 天每股分红合计 ÷ 最新收盘价 */
+  /* 送转复权：历史每股分红按其后发生的送/转比例折算到当前股本口径。
+   * 不复权的话，10转10 类方案会让旧息每股口径"账面减半"、股息率突变失真 */
+  var adjDiv = (function () {
+    var out = new Array(rows.length);
+    var f = 1;                               // 其后累计送转因子（当前股本 ÷ 当时股本）
+    for (var i = rows.length - 1; i >= 0; i--) {
+      out[i] = rows[i].div * f;
+      f *= 1 + (rows[i].split || 0);
+    }
+    return out;
+  })();
+  /* TTM：最近 365 天每股分红合计（送转复权后）÷ 最新收盘价 */
   var ttmCut = last.t - 365 * DAY_MS;
   var ttmSum = 0;
   for (var j = 0; j < rows.length; j++) {
-    if (rows[j].t >= ttmCut && rows[j].t <= endT) ttmSum += rows[j].div;
+    if (rows[j].t >= ttmCut && rows[j].t <= endT) ttmSum += adjDiv[j];
   }
   /* 边界优化：最近一笔滑出 TTM 窗口的分红（30 天内）默认补回——覆盖年度派息股
      "旧息刚出窗、新息尚未除息"的空窗期；但若窗口内已存在晚于它 +335 天（≈365−30，
@@ -1512,7 +1529,7 @@ function computeCore(rows, start, end, initAmount) {
         for (var k2 = j + 1; k2 < rows.length; k2++) {
           if (rows[k2].div > 0 && rows[k2].t > succCut && rows[k2].t <= endT) { replaced = true; break; }
         }
-        if (!replaced) ttmSum += rows[j].div;
+        if (!replaced) ttmSum += adjDiv[j];
       }
       break;                                                  /* 找到窗口外的最近一次就退出 */
     }
@@ -1522,9 +1539,26 @@ function computeCore(rows, start, end, initAmount) {
   var lastYear = last.ds.slice(0, 4);
   var yrSum = 0;
   for (var k = 0; k < rows.length; k++) {
-    if (rows[k].ds.slice(0, 4) === lastYear) yrSum += rows[k].div;
+    if (rows[k].ds.slice(0, 4) === lastYear) yrSum += adjDiv[k];
   }
   var annualYield = lastClose > 0 ? yrSum / lastClose : NaN;
+  /* 静态股息率（参照同花顺个股页口径）：最近一个完整年度的【已实施】分红方案
+   * 合计 ÷ 最新收盘价。按 REPORT_DATE 归属分红年度（A股末期方案 = YYYY-12-31、
+   * 中期 = YYYY-06-30），避免"除息日漂移 + 一年两派"把 TTM 圈进 3 笔造成的虚高
+   * （中国平安 601318 实测：TTM 6.90% vs 静态 5.06%，同花顺显示 5.06%）。
+   * 港美股无报告期字段，退化为按除息日自然年归属。 */
+  var staticYield = NaN, staticFy = '';
+  (function () {
+    var curY = parseInt(lastYear, 10);
+    for (var y = curY - 1; y >= curY - 3; y--) {
+      var s = 0, any = false;
+      for (var i3 = 0; i3 < rows.length; i3++) {
+        var fy = rows[i3].fy || rows[i3].ds.slice(0, 4);
+        if (fy === String(y) && adjDiv[i3] > 0) { s += adjDiv[i3]; any = true; }
+      }
+      if (any) { staticYield = lastClose > 0 ? s / lastClose : NaN; staticFy = y; return; }
+    }
+  })();
 
   /* --- 步骤 5b：历史股息率序列与当前分位 ---
    * 遍历【全部已加载历史】（不止分析区间，样本越多分位越可靠），
@@ -1532,7 +1566,7 @@ function computeCore(rows, start, end, initAmount) {
    *   每个交易日 i 的历史股息率 y_i = 窗口内分红合计 ÷ 当日收盘价
    * 序列从上市满 365 天起（之前不足一年，TTM 无意义）。
    * 当前分位 = 序列中（截至分析结束日）≤ 当前 TTM 股息率的比例。
-   * 注意送股会导致每股口径突变，此处按原始每股分红直接累加，与 TTM 卡片口径一致。 */
+   * 分红用送转复权后的每股口径（adjDiv），与 TTM 卡片一致，避免送股造成序列突变。 */
   var yieldSeries = [];            // [{ds, t, y}] 历史股息率序列
   var yieldPct = NaN;              // 当前股息率的历史分位（0~1）；越高代表当前股息率相对历史越高，股价相对分红越便宜
   var yieldMedian = NaN;           // 序列中位数（展示用）
@@ -1543,10 +1577,10 @@ function computeCore(rows, start, end, initAmount) {
       var cur = All[i];
       /* 左指针左移：剔除窗口外（> 365 天前）的分红 */
       while (L < i && All[L].t < cur.t - 365 * DAY_MS) {
-        winSum -= All[L].div;
+        winSum -= adjDiv[L];
         L++;
       }
-      winSum += cur.div;           // 纳入当日除息的分红
+      winSum += adjDiv[i];         // 纳入当日除息的分红（复权口径）
       if (cur.t - All[0].t < 365 * DAY_MS) continue;  // 上市未满一年，跳过
       if (cur.close > 0 && cur.t <= endT) {
         yieldSeries.push({ ds: cur.ds, t: cur.t, y: winSum / cur.close });
@@ -1583,6 +1617,7 @@ function computeCore(rows, start, end, initAmount) {
     dripFinal: dripFinal, holdFinal: holdFinal,
     dripIRR: dripIRR, holdIRR: holdIRR, priceChg: priceChg,
     ttmYield: ttmYield, annualYield: annualYield,
+    staticYield: staticYield, staticFy: staticFy,
     yieldSeries: yieldSeries, yieldPct: yieldPct, yieldMedian: yieldMedian,
     yearKeys: yearKeys, byYear: byYear
   };
@@ -1629,6 +1664,7 @@ function analyze() {
     dripIRR: c.dripIRR, holdIRR: c.holdIRR,
     dripFinal: c.dripFinal, holdFinal: c.holdFinal, dripShares: c.dripShares,
     ttmYield: c.ttmYield, annualYield: c.annualYield,
+    staticYield: c.staticYield, staticFy: c.staticFy,
     yieldPct: c.yieldPct, yieldMedian: c.yieldMedian, yieldCount: c.yieldSeries.length,
     priceChg: c.priceChg, startPrice: c.startPrice, lastClose: c.lastClose,
     days: c.days, initAmount: c.initAmount
@@ -1682,7 +1718,12 @@ function renderCards(d) {
   $('k-hold-irr-sub').textContent = '期末 ¥' + fmt2(d.holdFinal) + '（含落袋现金 ¥' + fmt2(d.cash) + '）';
 
   $('k-yield-ttm').textContent = fmtPct(d.ttmYield);
-  $('k-yield-ttm-sub').textContent = '最新年度口径 ' + fmtPct(d.annualYield);
+  /* 副标题参照同花顺口径并列静态股息率（最近完整年度已实施分红/现价）：
+   * TTM 因"一年两派 + 除息日漂移"可能圈进 3 笔分红而虚高（如中国平安 6.90% vs 静态 5.06%），
+   * 静态口径更贴近"年度分红能力"；自然年口径（当年内已除息）一并展示供交叉核对 */
+  $('k-yield-ttm-sub').textContent =
+    '静态口径 FY' + (d.staticFy || '--') + ' ' + (isFinite(d.staticYield) ? fmtPct(d.staticYield) : '--') +
+    ' · 自然年 ' + fmtPct(d.annualYield);
 
   /* 股息率历史分位卡片：分位高 = 当前股息率相对历史越高（股价相对分红越便宜，攒股买点参考） */
   var yp = $('k-yield-pct');
@@ -2667,31 +2708,37 @@ async function fetchHoldingPrice(holding, row) {
       if (holding.price > 0) {
       var now = Date.now();
       var ttmCut = now - 365 * DAY_MS;
-      var ttmSum = 0;
+      /* 预处理：解析日期 + 送转复权因子（每股分红按其后送/转比例折算到当前股本口径，
+       * 否则 10转10 类方案会让旧息"账面减半"、股息率失真） */
+      var items = [];
       for (var j = 0; j < divs.length; j++) {
         var dt = parseDate(divs[j].ds);
-        if (!dt) continue;
-        var t = dt.getTime();
-        if (t >= ttmCut && t <= now) ttmSum += (parseFloat(divs[j].dps) || 0);
+        if (dt) items.push({ t: dt.getTime(), dps: parseFloat(divs[j].dps) || 0, split: parseFloat(divs[j].split) || 0 });
+      }
+      items.sort(function (a, b) { return a.t - b.t; });
+      for (var j = 0; j < items.length; j++) {
+        if (items[j].dps <= 0) continue;
+        var f = 1;
+        for (var m = j + 1; m < items.length; m++) f *= 1 + items[m].split;
+        items[j].dpsAdj = items[j].dps * f;
+      }
+      var ttmSum = 0;
+      for (var j = 0; j < items.length; j++) {
+        if (items[j].t >= ttmCut && items[j].t <= now) ttmSum += (items[j].dpsAdj || items[j].dps);
       }
       // 边界优化：见 DRIP computeCore 的对应注释——刚滑出窗口 30 天内的那笔分红，
       // 仅当窗口内不存在晚于它 +335 天的"同期新息"时才补回；否则（半年派息股
       // 旧息刚出窗、新息已入窗）会重复计算，股息率虚高
-      for (var j = divs.length - 1; j >= 0; j--) {
-        var dt = parseDate(divs[j].ds);
-        if (!dt) continue;
-        var t = dt.getTime();
-        if ((parseFloat(divs[j].dps) || 0) > 0 && t < ttmCut) {
+      for (var j = items.length - 1; j >= 0; j--) {
+        var t = items[j].t;
+        if (items[j].dps > 0 && t < ttmCut) {
           if (ttmCut - t <= 30 * DAY_MS) {
             var succCut = t + 335 * DAY_MS;                   // 同期新息最早出现日
             var replaced = false;
-            for (var k2 = j + 1; k2 < divs.length; k2++) {
-              var dt2 = parseDate(divs[k2].ds);
-              if (!dt2) continue;
-              var t2 = dt2.getTime();
-              if ((parseFloat(divs[k2].dps) || 0) > 0 && t2 > succCut && t2 <= now) { replaced = true; break; }
+            for (var k2 = j + 1; k2 < items.length; k2++) {
+              if (items[k2].dps > 0 && items[k2].t > succCut && items[k2].t <= now) { replaced = true; break; }
             }
-            if (!replaced) ttmSum += parseFloat(divs[j].dps) || 0;
+            if (!replaced) ttmSum += (items[j].dpsAdj || items[j].dps);
           }
           break;                                             // 只看最近一次
         }
